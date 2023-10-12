@@ -1,6 +1,5 @@
-import numpy as np
+import numpy as np 
 
-class SPDE(object):
-    
+class SPDE:
     def __init__(self) -> None:
         pass
