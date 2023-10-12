@@ -1,1 +1,1 @@
-from spdepy import spdepy
+from spdepy import spde
