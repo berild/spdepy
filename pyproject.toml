@@ -7,9 +7,10 @@ license = "MIT"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "<3.13,>=3.9"
+python = ">=3.9,<3.12"
 numpy = "^1.26.0"
 scipy = "^1.11.3"
+scikit-sparse = "^0.4.12"
 
 [tool.poetry.dev-dependencies]
 

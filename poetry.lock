@@ -211,6 +211,20 @@ pytest = ">=4.6"
 testing = ["fields", "hunter", "process-tests", "pytest-xdist", "six", "virtualenv"]
 
 [[package]]
+name = "scikit-sparse"
+version = "0.4.12"
+description = "Scikit sparse matrix package"
+optional = false
+python-versions = ">=3.6, <3.12"
+files = [
+    {file = "scikit-sparse-0.4.12.tar.gz", hash = "sha256:e6502fea9ba561cfa5491eb222ed2c81c16263d8182a293950db20509c941166"},
+]
+
+[package.dependencies]
+numpy = ">=1.13.3"
+scipy = ">=0.19"
+
+[[package]]
 name = "scipy"
 version = "1.11.3"
 description = "Fundamental algorithms for scientific computing in Python"
@@ -265,5 +279,5 @@ files = [
 
 [metadata]
 lock-version = "2.0"
-python-versions = "<3.13,>=3.9"
-content-hash = "226d5f4c26e8174f2b6b343c9a6e4db9d1097a264eedafffe2d241e712fec42c"
+python-versions = ">=3.9,<3.12"
+content-hash = "a5df5a6869db777147f69a41a259a5700a30bf0b9e563d429a514c935db3cbcd"
