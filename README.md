@@ -1,4 +1,4 @@
-# spdepy
+# 📦 spdepy
 
 A package to model GRF through SPDE
 
