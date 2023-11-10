@@ -1,11 +1,10 @@
-
 #include <cmath>
 #include <vector> 
 
 class AH
 {
     public:
-        AH(int numX, int numY, double H, double hx,double hy);
+        AH(int numX, int numY, double H[2][2],double hx,double hy);
         int* Row();
         int* Col();
         double* Val();
@@ -15,7 +14,7 @@ class AH
         ~AH(); // deconstructor
 };
 // constuctor 
-AH::AH(int numX, int numY, double H, double hx, double hy)
+AH::AH(int numX, int numY, double H[2][2],double hx,double hy)
 {
     int idx = 0;
     row = new int [numX*numY*9];
@@ -32,15 +31,15 @@ AH::AH(int numX, int numY, double H, double hx, double hy)
 
             k = int(j*numX + i);
 
-            val[idx] = -2.0*hy/hx*H- 2.0*hx/hy*H + rem;
-            val[idx + 1] = hy/hx*H;
-            val[idx + 2] = hy/hx*H;
-            val[idx + 3] = hx/hy*H;
-            val[idx + 4] = hx/hy*H;
-            val[idx + 5] = 1.0/2.0*H;
-            val[idx + 6] = 1.0/2.0*H;
-            val[idx + 7] = -1.0/2.0*H;
-            val[idx + 8] = -1.0/2.0*H;
+            val[idx] = -2.0*hy/hx*(H[0][0] + H[0][0]) - 2.0*hx/hy*(H[1][1] + H[1][1]) + rem;
+            val[idx + 1] = hy/hx*H[0][0];
+            val[idx + 2] = hy/hx*H[0][0];
+            val[idx + 3] = hx/hy*H[1][1];
+            val[idx + 4] = hx/hy*H[1][1];
+            val[idx + 5] = 1.0/4.0*(H[0][1] + H[1][0]);
+            val[idx + 6] = 1.0/4.0*(H[0][1] + H[1][0]);
+            val[idx + 7] = -1.0/4.0*(H[0][1] + H[1][0]);
+            val[idx + 8] = -1.0/4.0*(H[0][1] + H[1][0]);
 
             if ( i == 0 ) { 
                 i_n = numX - 1;
@@ -117,7 +116,7 @@ double* AH::Val()
 // Define C functions for the C++ class - as ctypes can only talk to C...
 extern "C"
 {
-    AH* AH_new(int numX, int numY, double H, double hx, double hy){
+    AH* AH_new(int numX, int numY, double H[2][2],double hx,double hy){
         return new AH(numX, numY, H,hx,hy);}
     int* AH_Row(AH* ah) {return ah->Row();}
     int* AH_Col(AH* ah) {return ah->Col();}

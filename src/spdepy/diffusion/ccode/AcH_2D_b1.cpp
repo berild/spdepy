@@ -4,7 +4,7 @@
 class AH
 {
     public:
-        AH(int numX, int numY, double H,double hx,double hy);
+        AH(int numX, int numY, double H[2][2],double hx,double hy);
         int* Row();
         int* Col();
         double* Val();
@@ -14,7 +14,7 @@ class AH
         ~AH(); // deconstructor
 };
 // constuctor 
-AH::AH(int numX, int numY, double H,double hx,double hy)
+AH::AH(int numX, int numY, double H[2][2],double hx,double hy)
 {
     int idx = 0;
     row = new int [numX*numY*9];
@@ -42,56 +42,56 @@ AH::AH(int numX, int numY, double H,double hx,double hy)
             k = int(j*numX + i);
 
             if (k == int(j*numX + i_p)){
-                rem = rem + hy/hx*H;
+                rem = rem + hy/hx*H[0][0];
                 row[idx + 1] = int(numX*numY);
             }else{
                 row[idx + 1] = k;
             }
             if (k == int(j*numX + i_n)){
-                rem = rem + hy/hx*H;
+                rem = rem + hy/hx*H[0][0];
                 row[idx + 2] = int(numX*numY);
             }else{
                 row[idx + 2] = k;
             }
             if (k == int(j_p*numX + i)){
-                rem = rem + hx/hy*H;
+                rem = rem + hx/hy*H[1][1];
                 row[idx + 3] = int(numX*numY);
             }else{
                 row[idx + 3] = k;
             }
             if (k == int(j_n*numX + i)){
-                rem = rem + hx/hy*H;
+                rem = rem + hx/hy*H[1][1];
                 row[idx + 4] = int(numX*numY);
             }else{
                 row[idx + 4] = k;
             }
             if (k == int(j_p*numX + i_p)){
-                rem = rem + 1.0/2.0*H;
+                rem = rem + 1.0/4.0*(H[0][1] + H[1][0]);
                 row[idx + 5] = int(numX*numY);
             }else{
                 row[idx + 5] = k;
             }
             if (k == int(j_n*numX + i_n)){
-                rem = rem + 1.0/2.0*H;
+                rem = rem + 1.0/4.0*(H[0][1] + H[1][0]);
                 row[idx + 6] = int(numX*numY);
             }else{
                 row[idx + 6] = k;
             }
             if (k == int(j_p*numX + i_n)){
-                rem = rem - 1.0/2.0*H;
+                rem = rem - 1.0/4.0*(H[0][1] + H[1][0]);
                 row[idx + 7] = int(numX*numY);
             }else{
                 row[idx + 7] = k;
             }
             if (k == int(j_n*numX + i_p)){
-                rem = rem - 1.0/2.0*H;
+                rem = rem - 1.0/4.0*(H[0][1] + H[1][0]);
                 row[idx + 8] = int(numX*numY);
             }else{
                 row[idx + 8] = k;
             }
 
             row[idx] = k;
-            
+
             col[idx] = k;
             col[idx + 1] = int(j*numX + i_p);
             col[idx + 2] = int(j*numX + i_n);
@@ -102,15 +102,15 @@ AH::AH(int numX, int numY, double H,double hx,double hy)
             col[idx + 7] = int(j_p*numX + i_n);
             col[idx + 8] = int(j_n*numX + i_p);
 
-            val[idx] = -2*hy/hx*H - 2*hx/hy*H + rem;
-            val[idx + 1] = hy/hx*H ;
-            val[idx + 2] = hy/hx*H;
-            val[idx + 3] = hx/hy*H;
-            val[idx + 4] = hx/hy*H;
-            val[idx + 5] = 1.0/2.0*H;
-            val[idx + 6] = 1.0/2.0*H;
-            val[idx + 7] = -1.0/2.0*H;
-            val[idx + 8] = -1.0/2.0*H;
+            val[idx] = -2.0*hy/hx*H[0][0] - 2.0*hx/hy*H[1][1] + rem;
+            val[idx + 1] = hy/hx*H[0][0];
+            val[idx + 2] = hy/hx*H[0][0];
+            val[idx + 3] = hx/hy*H[1][1];
+            val[idx + 4] = hx/hy*H[1][1];
+            val[idx + 5] = 1.0/4.0*(H[0][1] + H[1][0]);
+            val[idx + 6] = 1.0/4.0*(H[0][1] + H[1][0]);
+            val[idx + 7] = -1.0/4.0*(H[0][1] + H[1][0]);
+            val[idx + 8] = -1.0/4.0*(H[0][1] + H[1][0]);
 
             idx += 9;
         }
@@ -143,7 +143,7 @@ double* AH::Val()
 // Define C functions for the C++ class - as ctypes can only talk to C...
 extern "C"
 {
-    AH* AH_new(int numX, int numY, double H,double hx,double hy){
+    AH* AH_new(int numX, int numY, double H[2][2],double hx,double hy){
         return new AH(numX, numY, H,hx,hy);}
     int* AH_Row(AH* ah) {return ah->Row();}
     int* AH_Col(AH* ah) {return ah->Col();}
