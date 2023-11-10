@@ -3,62 +3,70 @@ import numpy as np
 from sksparse.cholmod import cholesky
 
 class Matrix:
-    """ Sparse matrix class for spdepy
-    
-    This class is a wrapper for scipy.sparse.csc_matrix.
-    Additionally includes function for sparse cholesky decomposition.
-    
+    """ _summary_
+
+    Returns
+    -------
+    _type_
+        _description_
     """
     cholExists = False
 
     
     def __init__(self, mat: sparse.csc_matrix) -> None:
-        """
-        Constructor for sparse matrix.
-        Uses the _construct functions from spdepy.sparse._construct tp create
+        """__init__ _summary_
 
-        :param mat: sparse matrix
-        :type mat: sparse.csc_matrix
+        Parameters
+        ----------
+        mat : sparse.csc_matrix
+            _description_
         """
+        
         self.mat = mat
     
     @property
     def T(self) -> sparse.csr_matrix:
-        """
-        Transpose of matrix
+        """Tanspose of a sparse matrix
 
-        :return: transpose of sparse matrix
-        :rtype: sparse.csr_matrix
+        Returns
+        -------
+        sparse.csr_matrix
+            transpose of sparse matrix
         """
         return self.mat.T
 
     @property
     def shape(self) -> np.ndarray:
-        """
-        Number of stored elements
+        """shape of sparse matrix
 
-        :return: number of stored elements
-        :rtype: int
+        Returns
+        -------
+        np.ndarray
+            [nrows, ncols] of sparse matrix
         """
         return self.mat.shape
     
     @property
     def size(self) -> int:
-        """
-        Number of stored elements
+        """size of sparse matrix
 
-        :return: number of stored elements
-        :rtype: int
+        Returns
+        -------
+        int
+            size of sparse matrix
         """
         return self.mat.T
     
     @property
     def H(self) -> sparse.csr_matrix:
+        
         """
         Hermitean transpose
-
-        :return: Hermitean transpose of sparse matrix
-        :rtype: sparse.csc_matrix
+        
+        Returns
+        -------
+        sparse.csr_matrix
+            Hermitean transpose of sparse matrix
         """
         return self.mat.H
     
@@ -66,9 +74,11 @@ class Matrix:
     def A(self) -> np.ndarray:
         """
         Densify matrix
-
-        :return: dense representation of sparse matrix
-        :rtype: np.ndarray
+        
+        Returns
+        -------
+        np.ndarray
+            dense representation of sparse matrix
         """
         return self.mat.A
     
@@ -150,11 +160,36 @@ class Matrix:
         self.cholExists = True
     
     def solve(self, b: np.ndarray) -> np.ndarray:
+        """solve the linear equation set A@ x == b for the uknnown x for a positive definite matrix A.
+
+        Parameters
+        ----------
+        b : np.ndarray
+            Input array for the right hand side
+
+        Returns
+        -------
+        np.ndarray
+            the solution array x
+        """
         if not self.cholExists:
             self.fac = self._chol(self.mat)
         return self.fac.solve_A(b)
     
     def solve_L(self, b: np.ndarray) -> np.ndarray:
+        """solve the linear system L@ x == b for the uknnown x for a lower triangular matrix L.
+        L is the cholesky decomposition of a positive definite matrix A.
+
+        Parameters
+        ----------
+        b : np.ndarray
+            _description_
+
+        Returns
+        -------
+        np.ndarray
+            _description_
+        """
         if not self.cholExists:
             self.fac = self._chol(self.mat)
         return self.fac.solve_L(b)
@@ -196,4 +231,8 @@ class Matrix:
         # Not implemented yet
         pass
     
+    def __repr__(self) -> str:
+        pass
     
+    def __str__(self) -> str:
+        pass
