@@ -8,7 +8,7 @@ def grid(x,y,z= None, t = None,extend = None):
             mesh.setGrid(x=x,y=y,extend = extend)
             return(mesh)
         else:
-            from .spatial2D_regular_mesh import Grid
+            from .spat2Dtemp_regular_mesh import Grid
             mesh = Grid()
             mesh.setGrid(x=x,y=y,extend = extend)
             return(mesh)

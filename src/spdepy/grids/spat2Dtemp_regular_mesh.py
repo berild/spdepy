@@ -3,6 +3,9 @@ from scipy import sparse
 
 class Grid:
     def __init__(self) -> None:
+        self.sdim = 2
+        self.type = "gridST"
+        self.meta = "Regular Mesh in 2D and time"
         A = 40
         B = 40
         Tdur = 10
@@ -91,6 +94,11 @@ class Grid:
         self.V = self.hx*self.hy
         if extend is not None:
             self.extend(extend = extend)
+        self.setDv()
+    
+    def setDv(self):
+        self.Dv = self.V*sparse.eye(self.Ns)
+        self.iDv = sparse.eye(self.Ns)/self.V
             
 
     def basis(self,dx = 0 , dy = 0, d = 2) -> (np.ndarray,np.ndarray):

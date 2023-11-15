@@ -3,6 +3,9 @@ from scipy import sparse
 
 class Grid:
     def __init__(self) -> None:
+        self.sdim = 2
+        self.type = "gridS"
+        self.meta = "Regular Mesh in 2D"
         A = 40
         B = 40
         self.M = 30

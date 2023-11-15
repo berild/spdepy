@@ -2,6 +2,9 @@ import numpy as np
 
 class Grid:
     def __init__(self):
+        self.sdim = 3
+        self.type = "gridS"
+        self.meta = "Regular Mesh in 3D"
         self.A = 40
         self.B = 40
         self.C = 40
