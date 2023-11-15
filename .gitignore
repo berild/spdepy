@@ -140,3 +140,9 @@ dmypy.json
 
 # MacOS
 .DS_Store
+
+#folders
+old
+
+#data
+*.nc
