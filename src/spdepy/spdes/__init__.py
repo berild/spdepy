@@ -77,6 +77,8 @@ def spde_init(model, grid, parameters = None, ani = True, ha = True, bc = 3, Q0 
                 else:
                     from .var_advection_var_idiffusion2D import VarAdvectionVarIDiffusion2D
                     return(VarAdvectionVarIDiffusion2D(par = parameters, grid = grid, bc = bc, Q0 = Q0))
+        else:
+            assert False, "Model not implemented"
     elif grid.sdim == 3:
         assert False, "Model not implemented for 3D grids"
         if (model == "whittle-matern") or model == 1:
@@ -156,6 +158,6 @@ def spde_init(model, grid, parameters = None, ani = True, ha = True, bc = 3, Q0 
                 else:
                     from .var_advection_var_idiffusion3D import VarAdvectionVarIDiffusion3D
                     return(VarAdvectionVarIDiffusion3D(par = parameters, grid = grid, bc = bc, Q0 = Q0))
-    else:
-        assert False, "Model not implemented"
+        else:
+            assert False, "Model not implemented"
         
