@@ -7,9 +7,6 @@ from sksparse.cholmod import cholesky
 class AdvectionVarHaDiffusion2D:
     def __init__(self,grid,par=None,bc = 3, Q0 = None) -> None:
         self.grid = grid
-        if par is None:
-            par = np.hstack([[-1]*9,[1]*9,[1]*9,[1]*9,1,1,1,1])
-        self.setPars(par)
         self.type = "advection-var-ha-diffusion-2D-bc%d"%(bc)
         self.Q = None
         self.Q_fac = None
@@ -20,6 +17,11 @@ class AdvectionVarHaDiffusion2D:
         self.bc = bc
         self.AHnew = None
         self.Awnew = None
+        if par is None:
+            par = np.hstack([[-1]*9,[1]*9,[1]*9,[1]*9,1,1,1,1])
+            self.setPars(par)
+        else:
+            self.setQ(par = par)
     
     def getPars(self):
         return(np.hstack([self.kappa,self.gamma,self.vx,self.vy,self.wx,self.wy, self.sigma,self.tau]))
@@ -60,6 +62,16 @@ class AdvectionVarHaDiffusion2D:
         self.S = self.grid.getS()
         self.Q0 = kwargs.get("Q0")
         return(par)
+    
+    def setQ(self,par = None,S = None):
+        if par is None:
+            par = self.getPars()
+        else:
+            self.setPars(par)
+        if S is not None:
+            self.S = S
+        self.Q, self.Q_fac = self.makeQ(par = par, grad = False)
+        self.S = self.grid.getS()
     
     def sample(self,n = 1,simple = False):
         z = np.random.normal(size = self.grid.n*n).reshape(self.grid.n,n)

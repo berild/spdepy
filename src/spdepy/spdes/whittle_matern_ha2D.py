@@ -7,9 +7,6 @@ from sksparse.cholmod import cholesky
 class WhittleMaternHa2D:
     def __init__(self,grid,par=None,bc = 3) -> None:
         self.grid = grid
-        if par is None: 
-            par = np.hstack([[-1]*9,[-0.5]*9, [2]*9, [2.1]*9,1])
-        self.setPars(par)
         self.type = "whittle-matern-ha-2D-bc%d"%(bc)
         self.Q = None
         self.Q_fac = None
@@ -19,6 +16,11 @@ class WhittleMaternHa2D:
         self.bc = bc
         self.AHnew = None
         self.Awnew = None
+        if par is None: 
+            par = np.hstack([[-1]*9,[-0.5]*9, [2]*9, [2.1]*9,1])
+            self.setPars(par)
+        else:
+            self.setQ(par = par)
     
     def getPars(self) -> np.ndarray:
         return(np.hstack([self.kappa,self.gamma,self.vx,self.vy,self.tau]))

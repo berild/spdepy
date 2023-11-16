@@ -9,21 +9,23 @@ class AdvectionIDiffusion2D:
     
     Parameters = log kappa^2, log gamma, wx, wy, log sigma, log tau
     """
-    def __init__(self,grid,par=None, bc = 3) -> None:
+    def __init__(self,grid,par=None, bc = 3, Q0 = None) -> None:
         self.grid = grid
-        if par is None:
-            par = np.array([-1,-1,2,2,1,1])
-        self.setPars(par)
         self.type = "advection-idiffusion-2D-bc%d"%(bc)  
         self.Q = None
         self.Q_fac = None
         self.data = None
         self.r = None
         self.S = None
-        self.Q0 = None
+        self.Q0 = Q0
         self.bc = bc
         self.AHnew = None
         self.Awnew = None
+        if par is None:
+            par = np.array([-1,-1,2,2,1,1])
+            self.setPars(par)
+        else:
+            self.setQ(par = par)
     
     def getPars(self):
         return(np.hstack([self.kappa, self.gamma, self.wx, self.wy, self.sigma, self.tau]))
@@ -48,6 +50,17 @@ class AdvectionIDiffusion2D:
             self.r = 1
         self.S = self.grid.getS()
         return(par)
+    
+
+    def setQ(self,par = None,S = None):
+        if par is None:
+            par = self.getPars()
+        else:
+            self.setPars(par)
+        if S is not None:
+            self.S = S
+        self.Q, self.Q_fac = self.makeQ(par = par, grad = False)
+        self.S = self.grid.getS()
     
     def print(self,par):
         return("| \u03BA = %2.2f"%(np.exp(par[0])) +  ", \u03B3 = %2.2f"%(np.exp(par[1])) + ", wx = %2.2f"%(par[2]) + ", wy = %2.2f"%(par[3]) +", \u03C3 = %2.2f"%(np.exp(par[4])) +  ", \u03C4 = %2.2f"%(np.exp(par[5])))
