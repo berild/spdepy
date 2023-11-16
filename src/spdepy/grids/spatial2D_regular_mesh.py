@@ -20,6 +20,7 @@ class Grid:
         self.isExtended = False
         self.Ne = 0
         self.setGrid()
+        self.setDv()
 
     def getS(self, idxs = None) -> sparse.csc_matrix:
         if idxs is None:
@@ -84,6 +85,11 @@ class Grid:
         self.V = self.hx*self.hy
         if extend is not None:
             self.extend(extend = extend)
+        self.setDv()
+        
+    def setDv(self):
+        self.Dv = self.V*sparse.eye(self.Ns)
+        self.iDv = sparse.eye(self.Ns)/self.V
             
 
     def basis(self,dx = 0 , dy = 0, d = 2) -> (np.ndarray,np.ndarray):

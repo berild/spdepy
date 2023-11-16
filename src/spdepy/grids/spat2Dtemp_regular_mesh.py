@@ -24,6 +24,7 @@ class Grid:
         self.isExtended = False
         self.Ne = 0
         self.setGrid()
+        self.setDv()
 
     def getS(self, idxs = None) -> sparse.csc_matrix:
         if idxs is None:

@@ -19,7 +19,7 @@ class Optimize:
         self.fun = fun
         self.opt_steps = 0
         self.pol = 10
-        self.max_steps = 1000
+        self.max_steps = None
         
     def fit(self, **kwargs) -> np.ndarray:
         """fit _summary_
@@ -95,12 +95,12 @@ class Optimize:
             self.verbose = kwargs.get("verbose")
             if self.verbose and kwargs.get("print") is not None:
                 self.printPar = kwargs.get("print")
-        if kwargs.get("lr") is not None:
-            self.lr = kwargs.get("lr")
-            if hasattr(self.lr, "__len__"):
-                self.max_steps = len(self.lr)
         if kwargs.get("max_steps") is not None and self.max_steps is None:
             self.max_steps = kwargs.get("max_steps")
+        if kwargs.get("lr") is not None:
+            self.lr = kwargs.get("lr")
+            if hasattr(self.lr, "__len__") and self.max_steps is None:
+                self.max_steps = len(self.lr)
         self.truth = kwargs.get("truth")
             
     def setFun(self,fun) -> None:
