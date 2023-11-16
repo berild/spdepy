@@ -52,12 +52,12 @@ class Model:
         ----------
         data : np.ndarray
             Data for the model to be fitted to
-        kwargs : dict
-            Settings for the spde model:
-            {}
-            Settings for the optimization process:
-            {x0:, fun:, stepType:, pol:, truth:, verbose:, lr:, max_steps:}
-            See spdepy.optim.settings for more details
+        x0 : np.ndarray, optional
+            Initial guess for the parameters, by default defined by each spde model
+        verbose : bool, optional
+            Print progress, by default False
+        
+            
         """
         assert self.mod is not None
         x0 = self.mod.initFit(data,**kwargs)
