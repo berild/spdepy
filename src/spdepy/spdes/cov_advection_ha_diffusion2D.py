@@ -23,6 +23,8 @@ class CovAdvectionHaDiffusion2D:
         self.Q0 = Q0
         self.bc = bc
         self.ww = ww
+        self.AHnew = None
+        self.Awnew = None
     
     def getPars(self):
         return(np.hstack([self.kappa,self.gamma,self.vx,self.vy,self.lamb,self.sigma,self.tau]))

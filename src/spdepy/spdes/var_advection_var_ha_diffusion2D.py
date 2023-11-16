@@ -18,6 +18,8 @@ class VarAdvectionVarHaDiffusion2D:
         self.S = None
         self.Q0 = None
         self.bc = bc
+        self.AHnew = None
+        self.Awnew = None
     
     def getPars(self):
         return(np.hstack([self.kappa,self.gamma,self.vx,self.vy,self.wx,self.wy,self.sigma,self.tau]))

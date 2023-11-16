@@ -17,8 +17,8 @@ class WhittleMaternHa2D:
         self.r = None
         self.S = None
         self.bc = bc
-        if par is not None:
-            self.setQ(par = par)
+        self.AHnew = None
+        self.Awnew = None
     
     def getPars(self) -> np.ndarray:
         return(np.hstack([self.kappa,self.gamma,self.vx,self.vy,self.tau]))
