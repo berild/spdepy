@@ -28,7 +28,7 @@ def model(**kwargs) -> Model:
     ha: bool, optional
         Use half angles diffusion, by default True if anisotropic diffusion is used
     anisotropic: bool, optional
-        Use anisotropic diffusion, by default True
+        Use anisotropic diffusion, by default True. Unused if ha is True.
     Q0: sparse.csc_matrix, optional
         Default None. The precision matrix of initial field. Required to constructed the precision matrix of spatial temporal field. Can be given later.
     Returns
