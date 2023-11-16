@@ -12,7 +12,7 @@ class WhittleMaternAnisotropic2D:
     def __init__(self,grid,par=None,bc = 3) -> None:
         self.grid = grid
         if par is None: 
-            par = np.hstack([[-1]*9,[-0.5]*9, [2]*9, [2.1]*9,3])
+            par = np.hstack([[-1]*9,[-0.5]*9, [2]*9, [2.1]*9,1])
         self.setPars(par)
         self.type = "whittle-matern-anisotropic-2D-bc%d"%(bc)
         self.Q = None
@@ -38,7 +38,7 @@ class WhittleMaternAnisotropic2D:
     def initFit(self,data, **kwargs):
         #mod4: kappa(0:9), gamma(9:18), vx(18:27), vy(27:36), sigma(36)
         assert data.shape[0] <= self.grid.Ns
-        par = np.hstack([[-1]*9,[-0.5]*9, [2]*9, [2.1]*9,3])
+        par = np.hstack([[-1]*9,[-0.5]*9, [2]*9, [2.1]*9,1])
         self.data = data
         if self.data.ndim == 2:
             self.r = self.data.shape[1]
@@ -152,16 +152,17 @@ class WhittleMaternAnisotropic2D:
     def Ah(self,Hs) -> sparse.csc_matrix:
         if self.AHnew is None:
             self.setClib()
-        obj = self.AHnew(self.grid.M, self.grid.N, Hs, self.grid.hx, self.grid.hy)
+        M, N = self.grid.shape
+        obj = self.AHnew(M, N, Hs, self.grid.hx, self.grid.hy)
         row = self.AHrow(obj)
         col = self.AHcol(obj)
         val = self.AHval(obj)
 
-        rem = row != (self.grid.M*self.grid.N)
+        rem = row != (M*N)
         row = row[rem]
         col = col[rem]
         val = val[rem]
-        res = sparse.csc_matrix((val, (row, col)), shape=(self.grid.M*self.grid.N, self.grid.M*self.grid.N))
+        res = sparse.csc_matrix((val, (row, col)), shape=(M*N, M*N))
         self.AHdel(obj)
         return(res)
         
@@ -178,18 +179,19 @@ class WhittleMaternAnisotropic2D:
                 os.system('g++ -shared -o %s/ccode/lib_AH_2D_b%d.so %s/ccode/AH_2D_b%d.o'%(tmp,self.bc,tmp,self.bc))
             os.system('rm %s/ccode/AH_2D_b%d.o'%(tmp,self.bc))
         self.lib = ctypes.cdll.LoadLibrary('%s/ccode/lib_AH_2D_b%d.so'%(tmp,self.bc))
+        M, N = self.grid.shape
         self.AHnew = self.lib.AH_new
-        self.AHnew.argtypes = [ctypes.c_int, ctypes.c_int, np.ctypeslib.ndpointer(dtype=np.float64,ndim=4,shape = (self.grid.M*self.grid.N,4,2,2)), ctypes.c_double,ctypes.c_double]
+        self.AHnew.argtypes = [ctypes.c_int, ctypes.c_int, np.ctypeslib.ndpointer(dtype=np.float64,ndim=4,shape = (M*N,4,2,2)), ctypes.c_double,ctypes.c_double]
         self.AHnew.restype = ctypes.c_void_p
         self.AHrow = self.lib.AH_Row
         self.AHrow.argtypes = [ctypes.c_void_p]
-        self.AHrow.restype = np.ctypeslib.ndpointer(dtype=ctypes.c_int, shape = (self.grid.M*self.grid.N*9,))
+        self.AHrow.restype = np.ctypeslib.ndpointer(dtype=ctypes.c_int, shape = (M*N*9,))
         self.AHcol = self.lib.AH_Col
         self.AHcol.argtypes = [ctypes.c_void_p]
-        self.AHcol.restype = np.ctypeslib.ndpointer(dtype=ctypes.c_int, shape = (self.grid.M*self.grid.N*9,))
+        self.AHcol.restype = np.ctypeslib.ndpointer(dtype=ctypes.c_int, shape = (M*N*9,))
         self.AHval = self.lib.AH_Val
         self.AHval.argtypes = [ctypes.c_void_p]
-        self.AHval.restype = np.ctypeslib.ndpointer(dtype=ctypes.c_double, shape = (self.grid.M*self.grid.N*9,))
+        self.AHval.restype = np.ctypeslib.ndpointer(dtype=ctypes.c_double, shape = (M*N*9,))
         self.AHdel = self.lib.AH_delete
         self.AHdel.argtypes = [ctypes.c_void_p]
         self.AHdel.restype = None

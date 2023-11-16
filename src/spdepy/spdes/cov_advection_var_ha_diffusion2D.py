@@ -225,30 +225,32 @@ class CovAdvectionVarHaDiffusion2D:
     def Aw(self,ws) -> sparse.csc_matrix:
         if self.Awnew is None:
             self.setClib()
-        obj = self.Awnew(self.grid.M, self.grid.N, ws, self.grid.hx, self.grid.hy)
+        M,N,T = self.grid.shape
+        obj = self.Awnew(M, N, ws, self.grid.hx, self.grid.hy)
         row = self.Awrow(obj)
         col = self.Awcol(obj)
         val = self.Awval(obj)
-        self.Awdel(obj)
-        rem = row != (self.grid.M*self.grid.N)
+        rem = row != (M*N)
         row = row[rem]
         col = col[rem]
         val = val[rem]
-        return(sparse.csc_matrix((val, (row, col)), shape=(self.grid.M*self.grid.N, self.grid.M*self.grid.N)))
+        self.Awdel(obj)
+        return(sparse.csc_matrix((val, (row, col)), shape=(M*N, M*N)))
     
     def Ah(self,Hs) -> sparse.csc_matrix:
         if self.AHnew is None:
             self.setClib()
-        obj = self.AHnew(self.grid.M, self.grid.N, Hs, self.grid.hx, self.grid.hy)
+        M, N = self.grid.shape
+        obj = self.AHnew(M, N, Hs, self.grid.hx, self.grid.hy)
         row = self.AHrow(obj)
         col = self.AHcol(obj)
         val = self.AHval(obj)
 
-        rem = row != (self.grid.M*self.grid.N)
+        rem = row != (M*N)
         row = row[rem]
         col = col[rem]
         val = val[rem]
-        res = sparse.csc_matrix((val, (row, col)), shape=(self.grid.M*self.grid.N, self.grid.M*self.grid.N))
+        res = sparse.csc_matrix((val, (row, col)), shape=(M*N, M*N))
         self.AHdel(obj)
         return(res)
         
@@ -265,19 +267,19 @@ class CovAdvectionVarHaDiffusion2D:
                 os.system('g++ -shared -o %s/ccode/lib_Aw_2D_b%d.so %s/ccode/Aw_2D_b%d.o'%(tmp,self.bc,tmp,self.bc))
             os.system('rm %s/ccode/Aw_2D_b%d.o'%(tmp,self.bc))
         self.lib = ctypes.cdll.LoadLibrary('%s/ccode/lib_Aw_2D_b%d.so'%(tmp,self.bc))
-
+        M,N,T= self.grid.shape
         self.Awnew = self.lib.Aw_new
-        self.Awnew.argtypes = [ctypes.c_int, ctypes.c_int, np.ctypeslib.ndpointer(dtype=np.float64,ndim=2,shape = (self.grid.M*self.grid.N,4)), ctypes.c_double,ctypes.c_double]
+        self.Awnew.argtypes = [ctypes.c_int, ctypes.c_int, np.ctypeslib.ndpointer(dtype=np.float64,ndim=2,shape = (M*N,4)), ctypes.c_double,ctypes.c_double]
         self.Awnew.restype = ctypes.c_void_p
         self.Awrow = self.lib.Aw_Row
         self.Awrow.argtypes = [ctypes.c_void_p]
-        self.Awrow.restype = np.ctypeslib.ndpointer(dtype=ctypes.c_int, shape = (self.grid.M*self.grid.N*5,))
+        self.Awrow.restype = np.ctypeslib.ndpointer(dtype=ctypes.c_int, shape = (M*N*5,))
         self.Awcol = self.lib.Aw_Col
         self.Awcol.argtypes = [ctypes.c_void_p]
-        self.Awcol.restype = np.ctypeslib.ndpointer(dtype=ctypes.c_int, shape = (self.grid.M*self.grid.N*5,))
+        self.Awcol.restype = np.ctypeslib.ndpointer(dtype=ctypes.c_int, shape = (M*N*5,))
         self.Awval = self.lib.Aw_Val
         self.Awval.argtypes = [ctypes.c_void_p]
-        self.Awval.restype = np.ctypeslib.ndpointer(dtype=ctypes.c_double, shape = (self.grid.M*self.grid.N*5,))
+        self.Awval.restype = np.ctypeslib.ndpointer(dtype=ctypes.c_double, shape = (M*N*5,))
         self.Awdel = self.lib.Aw_delete
         self.Awdel.argtypes = [ctypes.c_void_p]
         self.Awdel.restype = None
@@ -295,17 +297,17 @@ class CovAdvectionVarHaDiffusion2D:
             os.system('rm %s/ccode/AH_2D_b%d.o'%(tmp,self.bc))
         self.lib = ctypes.cdll.LoadLibrary('%s/ccode/lib_AH_2D_b%d.so'%(tmp,self.bc))
         self.AHnew = self.lib.AH_new
-        self.AHnew.argtypes = [ctypes.c_int, ctypes.c_int, np.ctypeslib.ndpointer(dtype=np.float64,ndim=4,shape = (self.grid.M*self.grid.N,4,2,2)), ctypes.c_double,ctypes.c_double]
+        self.AHnew.argtypes = [ctypes.c_int, ctypes.c_int, np.ctypeslib.ndpointer(dtype=np.float64,ndim=4,shape = (M*N,4,2,2)), ctypes.c_double,ctypes.c_double]
         self.AHnew.restype = ctypes.c_void_p
         self.AHrow = self.lib.AH_Row
         self.AHrow.argtypes = [ctypes.c_void_p]
-        self.AHrow.restype = np.ctypeslib.ndpointer(dtype=ctypes.c_int, shape = (self.grid.M*self.grid.N*9,))
+        self.AHrow.restype = np.ctypeslib.ndpointer(dtype=ctypes.c_int, shape = (M*N*9,))
         self.AHcol = self.lib.AH_Col
         self.AHcol.argtypes = [ctypes.c_void_p]
-        self.AHcol.restype = np.ctypeslib.ndpointer(dtype=ctypes.c_int, shape = (self.grid.M*self.grid.N*9,))
+        self.AHcol.restype = np.ctypeslib.ndpointer(dtype=ctypes.c_int, shape = (M*N*9,))
         self.AHval = self.lib.AH_Val
         self.AHval.argtypes = [ctypes.c_void_p]
-        self.AHval.restype = np.ctypeslib.ndpointer(dtype=ctypes.c_double, shape = (self.grid.M*self.grid.N*9,))
+        self.AHval.restype = np.ctypeslib.ndpointer(dtype=ctypes.c_double, shape = (M*N*9,))
         self.AHdel = self.lib.AH_delete
         self.AHdel.argtypes = [ctypes.c_void_p]
         self.AHdel.restype = None
