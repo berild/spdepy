@@ -175,3 +175,8 @@ class Grid:
         if bs is None:
             bs = self.bsH
         return(bs@par)
+
+
+     
+    def plot(self,value):
+        pass

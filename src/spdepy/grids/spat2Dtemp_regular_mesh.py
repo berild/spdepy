@@ -334,3 +334,7 @@ class Grid:
             return(Ae@ww)
         else:
             return(ww)
+        
+        
+    def plot(self,value):
+        pass
