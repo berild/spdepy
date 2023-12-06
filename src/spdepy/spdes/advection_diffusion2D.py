@@ -22,15 +22,16 @@ class AdvectionDiffusion2D:
         self.AHnew = None
         self.Awnew = None
         if par is None:
-            par = np.array([-1,-1,2,2,2,2,1,1])
+            par = np.array([-1,3,5,5,10,10,-1,1],dtype = "float64")
             self.setPars(par)
         else:
             self.setQ(par = par)
     
     def getPars(self):
-        return(np.hstack([self.kappa,self.gamma, self.vx, self.vy, self.wx, self.wy, self.sigma, self.tau]))
+        return(np.hstack([self.kappa,self.gamma, self.vx, self.vy, self.wx, self.wy, self.sigma, self.tau],dtype="float64"))
     
     def setPars(self,par)-> None:
+        par = np.array(par,dtype="float64")
         self.kappa = par[0]
         self.gamma = par[1]
         self.vx = par[2]
@@ -44,7 +45,7 @@ class AdvectionDiffusion2D:
         assert data.shape[0] <= self.grid.n
         assert kwargs.get("Q0") is not None or self.Q0 is not None
         self.Q0 = kwargs.get("Q0") if kwargs.get("Q0") is not None else self.Q0
-        par = np.array([-1,-1,2,2,2,2,1,1])
+        par = np.array([-1,3,5,5,10,10,-1,1],dtype="float64")
         self.data = data
         if self.data.ndim == 2:
             self.r = self.data.shape[1]
@@ -68,16 +69,16 @@ class AdvectionDiffusion2D:
 
     def makeQ(self, par, grad = True):
         assert self.Q0 is not None
-        kappa = np.exp(par[0])
-        gamma = np.exp(par[1])
-        vv = par[2:4]
-        ws = par[4:6]
-        sigma = np.exp(par[6])
         dt = self.grid.dt
         T = self.grid.T
         Ns = self.grid.Ns
         Dv = self.grid.Dv
         iDv = self.grid.iDv
+        kappa = np.exp(par[0])
+        gamma = np.exp(par[1])
+        vv = par[2:4]
+        ws = par[4:6]
+        sigma = np.exp(par[6])
         Hs = gamma*np.eye(2) + vv[:,np.newaxis]*vv[np.newaxis,:]
         Dk =  kappa*sparse.eye(Ns) 
         As = Dv@Dk
@@ -99,55 +100,55 @@ class AdvectionDiffusion2D:
             for t in range(T-2):
                 tdQ = sparse.bmat([[tdQ],[sparse.bmat([[sparse.csc_matrix((Ns,(t)*Ns)), -dA.T@iDv@Qs - A.T@iDv@dQs, dA.T@iDv@Qs@iDv@A + A.T@iDv@dQs@iDv@A + A.T@iDv@Qs@iDv@dA + dQs, -dQs@iDv@A - Qs@iDv@dA,sparse.csc_matrix((Ns,(T-3-t)*Ns))]])]])
             tdQ = sparse.bmat([[tdQ],[sparse.bmat([[sparse.csc_matrix((Ns,(T-2)*Ns)),- dA.T@iDv@Qs - A.T@iDv@dQs, dA.T@iDv@Qs@iDv@A + A.T@iDv@dQs@iDv@A + A.T@iDv@Qs@iDv@dA]])]])
-            dQ.append(1/(dt*sigma)*tdQ)
+            dQ.append((1/(dt*sigma)*tdQ).tocsc())
             # log gamma
-            dHs = gamma*np.eye(2)
+            dHs = gamma*np.eye(2) 
             dA = - self.Ah(dHs)*dt
             tdQ = sparse.bmat([[sparse.csc_matrix((Ns,Ns)), - Qs@iDv@dA,sparse.csc_matrix((Ns,(T-2)*Ns))]])
             for t in range(T-2):
                 tdQ = sparse.bmat([[tdQ],[sparse.bmat([[sparse.csc_matrix((Ns,(t)*Ns)), -dA.T@iDv@Qs, dA.T@iDv@Qs@iDv@A + A.T@iDv@Qs@iDv@dA, - Qs@iDv@dA,sparse.csc_matrix((Ns,(T-3-t)*Ns))]])]])
             tdQ = sparse.bmat([[tdQ],[sparse.bmat([[sparse.csc_matrix((Ns,(T-2)*Ns)),- dA.T@iDv@Qs , dA.T@iDv@Qs@iDv@A + A.T@iDv@Qs@iDv@dA]])]])
-            dQ.append(1/(dt*sigma)*tdQ)
+            dQ.append((1/(dt*sigma)*tdQ).tocsc())
             # vx 
-            dvv = np.array([1,0])
-            dHs = dvv[:,np.newaxis]*vv[np.newaxis,:] + vv[:,np.newaxis]*dvv[np.newaxis,:]
+            dvv = np.array([1,0],dtype = "float64") 
+            dHs = dvv[:,np.newaxis]*vv[np.newaxis,:] + vv[:,np.newaxis]*dvv[np.newaxis,:] 
             dA = - self.Ah(dHs)*dt
             tdQ = sparse.bmat([[sparse.csc_matrix((Ns,Ns)), - Qs@iDv@dA,sparse.csc_matrix((Ns,(T-2)*Ns))]])
             for t in range(T-2):
                 tdQ = sparse.bmat([[tdQ],[sparse.bmat([[sparse.csc_matrix((Ns,(t)*Ns)), -dA.T@iDv@Qs, dA.T@iDv@Qs@iDv@A + A.T@iDv@Qs@iDv@dA, - Qs@iDv@dA,sparse.csc_matrix((Ns,(T-3-t)*Ns))]])]])
             tdQ = sparse.bmat([[tdQ],[sparse.bmat([[sparse.csc_matrix((Ns,(T-2)*Ns)),- dA.T@iDv@Qs , dA.T@iDv@Qs@iDv@A + A.T@iDv@Qs@iDv@dA]])]])
-            dQ.append(1/(dt*sigma)*tdQ)
+            dQ.append((1/(dt*sigma)*tdQ).tocsc())
             # vy
-            dvv = np.array([0,1])
-            dHs = dvv[:,np.newaxis]*vv[np.newaxis,:] + vv[:,np.newaxis]*dvv[np.newaxis,:]
+            dvv = np.array([0,1],dtype = "float64")
+            dHs = dvv[:,np.newaxis]*vv[np.newaxis,:] + vv[:,np.newaxis]*dvv[np.newaxis,:] 
             dA = - self.Ah(dHs)*dt
             tdQ = sparse.bmat([[sparse.csc_matrix((Ns,Ns)), - Qs@iDv@dA,sparse.csc_matrix((Ns,(T-2)*Ns))]])
             for t in range(T-2):
                 tdQ = sparse.bmat([[tdQ],[sparse.bmat([[sparse.csc_matrix((Ns,(t)*Ns)), -dA.T@iDv@Qs, dA.T@iDv@Qs@iDv@A + A.T@iDv@Qs@iDv@dA, - Qs@iDv@dA,sparse.csc_matrix((Ns,(T-3-t)*Ns))]])]])
             tdQ = sparse.bmat([[tdQ],[sparse.bmat([[sparse.csc_matrix((Ns,(T-2)*Ns)),- dA.T@iDv@Qs , dA.T@iDv@Qs@iDv@A + A.T@iDv@Qs@iDv@dA]])]])
-            dQ.append(1/(dt*sigma)*tdQ)
+            dQ.append((1/(dt*sigma)*tdQ).tocsc())
             # wx
-            dws = np.array([1,0])
-            dA =  self.Aw(dws)*dt
+            #dws = np.kron([1,1],[1,0]) + np.zeros((Ns,4))
+            dA =  self.Aw(ws,diff = 1)*dt
             tdQ = sparse.bmat([[sparse.csc_matrix((Ns,Ns)), - Qs@iDv@dA,sparse.csc_matrix((Ns,(T-2)*Ns))]])
             for t in range(T-2):
                 tdQ = sparse.bmat([[tdQ],[sparse.bmat([[sparse.csc_matrix((Ns,(t)*Ns)), -dA.T@iDv@Qs, dA.T@iDv@Qs@iDv@A + A.T@iDv@Qs@iDv@dA, - Qs@iDv@dA,sparse.csc_matrix((Ns,(T-3-t)*Ns))]])]])
             tdQ = sparse.bmat([[tdQ],[sparse.bmat([[sparse.csc_matrix((Ns,(T-2)*Ns)),- dA.T@iDv@Qs, dA.T@iDv@Qs@iDv@A + A.T@iDv@Qs@iDv@dA]])]])
-            dQ.append(1/(dt*sigma)*tdQ)
+            dQ.append((1/(dt*sigma)*tdQ).tocsc())
             # wy
-            dws = np.array([0,1])
-            dA = self.Aw(dws)*dt
+            #dws = np.kron([1,1],[0,1]) + np.zeros((Ns,4))
+            dA = self.Aw(ws,diff = 2)*dt
             tdQ = sparse.bmat([[sparse.csc_matrix((Ns,Ns)), - Qs@iDv@dA,sparse.csc_matrix((Ns,(T-2)*Ns))]])
             for t in range(T-2):
                 tdQ = sparse.bmat([[tdQ],[sparse.bmat([[sparse.csc_matrix((Ns,(t)*Ns)), -dA.T@iDv@Qs, dA.T@iDv@Qs@iDv@A + A.T@iDv@Qs@iDv@dA, - Qs@iDv@dA,sparse.csc_matrix((Ns,(T-3-t)*Ns))]])]])
             tdQ = sparse.bmat([[tdQ],[sparse.bmat([[sparse.csc_matrix((Ns,(T-2)*Ns)),- dA.T@iDv@Qs, dA.T@iDv@Qs@iDv@A + A.T@iDv@Qs@iDv@dA]])]])
-            dQ.append(1/(dt*sigma)*tdQ)
+            dQ.append((1/(dt*sigma)*tdQ).tocsc())
             # log sigma 2
-            tdQ2 = sparse.bmat([[Qs, -Qs@iDv@A,sparse.csc_matrix((Ns,(T-2)*Ns))]])
+            tdQ = sparse.bmat([[Qs, -Qs@iDv@A,sparse.csc_matrix((Ns,(T-2)*Ns))]])
             for t in range(T-2):
-                tdQ2 = sparse.bmat([[tdQ2],[sparse.bmat([[sparse.csc_matrix((Ns,(t)*Ns)),-A.T@iDv@Qs, A.T@iDv@Qs@iDv@A + Qs, -Qs@iDv@A,sparse.csc_matrix((Ns,(T-3-t)*Ns))]])]])
-            tdQ2 = sparse.bmat([[tdQ2],[sparse.bmat([[sparse.csc_matrix((Ns,(T-2)*Ns)),-A.T@iDv@Qs, A.T@iDv@Qs@iDv@A]])]])
-            dQ.append(-1/(dt*sigma)*tdQ2)
+                tdQ = sparse.bmat([[tdQ],[sparse.bmat([[sparse.csc_matrix((Ns,(t)*Ns)),-A.T@iDv@Qs, A.T@iDv@Qs@iDv@A + Qs, -Qs@iDv@A,sparse.csc_matrix((Ns,(T-3-t)*Ns))]])]])
+            tdQ = sparse.bmat([[tdQ],[sparse.bmat([[sparse.csc_matrix((Ns,(T-2)*Ns)),-A.T@iDv@Qs, A.T@iDv@Qs@iDv@A]])]])
+            dQ.append((-1/(dt*sigma)*tdQ).tocsc())
             return(Q,Q_fac,dQ)
         else:
             return(Q,Q_fac)
@@ -159,8 +160,6 @@ class AdvectionDiffusion2D:
             Q, Q_fac, dQ = self.makeQ(par = par, grad = True)
             Q_c = Q + self.S.T@self.S*tau
             Q_c_fac = cholesky(Q_c)
-            if (Q_fac == -1) or (Q_c_fac == -1):
-                return((self.like,self.jac))
             mu_c = Q_c_fac.solve_A(self.S.T@data*tau)
             if self.r == 1:
                 data = data.reshape(-1,1)
@@ -183,9 +182,7 @@ class AdvectionDiffusion2D:
             tau = np.exp(par[-1])
             Q, Q_fac = self.makeQ(par = par, grad = False)
             Q_c = Q + self.S.T@self.S*tau
-            Q_c_fac= self.cholesky(Q_c)
-            if (Q_fac == -1) or (Q_c_fac == -1):
-                return(self.like)
+            Q_c_fac= cholesky(Q_c)
             mu_c = Q_c_fac.solve_A(self.S.T@data*tau)
             if self.r == 1:
                 data = data.reshape(-1,1)
@@ -194,26 +191,30 @@ class AdvectionDiffusion2D:
             like =  -like/(self.S.shape[0]*self.r)
             return(like)
         
-        
-    def Aw(self,ws) -> sparse.csc_matrix:
+    
+    def Aw(self,ws,diff = 3) -> sparse.csc_matrix:
         if self.Awnew is None:
             self.setClib()
         M, N, T = self.grid.shape
-        obj = self.Awnew(M, N, ws, self.grid.hx, self.grid.hy)
+        ws = np.array(ws,dtype = "float64")
+        obj = self.Awnew(M, N, ws, self.grid.hx, self.grid.hy, diff)
         row = self.Awrow(obj)
         col = self.Awcol(obj)
         val = self.Awval(obj)
-        self.Awdel(obj)
-        rem = row != (M*N)
+        
+        rem = (row != M*N)
         row = row[rem]
         col = col[rem]
         val = val[rem]
-        return(sparse.csc_matrix((val, (row, col)), shape=(M*N, M*N)))
+        res = sparse.csc_matrix((val, (row, col)), shape=(M*N, M*N))
+        self.Awdel(obj)
+        return(res)
     
     def Ah(self,Hs) -> sparse.csc_matrix:
         if self.AHnew is None:
             self.setClib()
         M, N, T = self.grid.shape
+        Hs = np.array(Hs,dtype = "float64")
         obj = self.AHnew(M, N, Hs, self.grid.hx, self.grid.hy)
         row = self.AHrow(obj)
         col = self.AHcol(obj)
@@ -239,21 +240,22 @@ class AdvectionDiffusion2D:
             else:
                 os.system('g++ -shared -o %s/ccode/lib_Acw_2D_b%d.so %s/ccode/Acw_2D_b%d.o'%(tmp,self.bc,tmp,self.bc))
             os.system('rm %s/ccode/Acw_2D_b%d.o'%(tmp,self.bc))
-        self.lib = ctypes.cdll.LoadLibrary('%s/ccode/lib_Acw_2D_b%d.so'%(tmp,self.bc))
+        self.libAw = ctypes.cdll.LoadLibrary('%s/ccode/lib_Acw_2D_b%d.so'%(tmp,self.bc))
         M, N, T = self.grid.shape
-        self.Awnew = self.lib.Aw_new
-        self.Awnew.argtypes = [ctypes.c_int, ctypes.c_int, np.ctypeslib.ndpointer(dtype=np.float64,ndim=1,shape = (2,)), ctypes.c_double,ctypes.c_double]
+        
+        self.Awnew = self.libAw.Aw_new
+        self.Awnew.argtypes = [ctypes.c_int, ctypes.c_int, np.ctypeslib.ndpointer(dtype=np.float64,ndim = 1,shape = (2,)), ctypes.c_double,ctypes.c_double,ctypes.c_int]
         self.Awnew.restype = ctypes.c_void_p
-        self.Awrow = self.lib.Aw_Row
+        self.Awrow = self.libAw.Aw_Row
         self.Awrow.argtypes = [ctypes.c_void_p]
         self.Awrow.restype = np.ctypeslib.ndpointer(dtype=ctypes.c_int, shape = (M*N*5,))
-        self.Awcol = self.lib.Aw_Col
+        self.Awcol = self.libAw.Aw_Col
         self.Awcol.argtypes = [ctypes.c_void_p]
         self.Awcol.restype = np.ctypeslib.ndpointer(dtype=ctypes.c_int, shape = (M*N*5,))
-        self.Awval = self.lib.Aw_Val
+        self.Awval = self.libAw.Aw_Val
         self.Awval.argtypes = [ctypes.c_void_p]
         self.Awval.restype = np.ctypeslib.ndpointer(dtype=ctypes.c_double, shape = (M*N*5,))
-        self.Awdel = self.lib.Aw_delete
+        self.Awdel = self.libAw.Aw_delete
         self.Awdel.argtypes = [ctypes.c_void_p]
         self.Awdel.restype = None
         
@@ -267,19 +269,20 @@ class AdvectionDiffusion2D:
             else:
                 os.system('g++ -shared -o %s/ccode/lib_AcH_2D_b%d.so %s/ccode/AcH_2D_b%d.o'%(tmp,self.bc,tmp,self.bc))
             os.system('rm %s/ccode/AcH_2D_b%d.o'%(tmp,self.bc))
-        self.lib = ctypes.cdll.LoadLibrary('%s/ccode/lib_AcH_2D_b%d.so'%(tmp,self.bc))
-        self.AHnew = self.lib.AH_new
+        self.libAh = ctypes.cdll.LoadLibrary('%s/ccode/lib_AcH_2D_b%d.so'%(tmp,self.bc))
+        self.AHnew = self.libAh.AH_new
         self.AHnew.argtypes = [ctypes.c_int, ctypes.c_int, np.ctypeslib.ndpointer(dtype=np.float64,ndim=2,shape = (2,2)), ctypes.c_double,ctypes.c_double]
         self.AHnew.restype = ctypes.c_void_p
-        self.AHrow = self.lib.AH_Row
+        self.AHrow = self.libAh.AH_Row
         self.AHrow.argtypes = [ctypes.c_void_p]
         self.AHrow.restype = np.ctypeslib.ndpointer(dtype=ctypes.c_int, shape = (M*N*9,))
-        self.AHcol = self.lib.AH_Col
+        self.AHcol = self.libAh.AH_Col
         self.AHcol.argtypes = [ctypes.c_void_p]
         self.AHcol.restype = np.ctypeslib.ndpointer(dtype=ctypes.c_int, shape = (M*N*9,))
-        self.AHval = self.lib.AH_Val
+        self.AHval = self.libAh.AH_Val
         self.AHval.argtypes = [ctypes.c_void_p]
         self.AHval.restype = np.ctypeslib.ndpointer(dtype=ctypes.c_double, shape = (M*N*9,))
-        self.AHdel = self.lib.AH_delete
+        self.AHdel = self.libAh.AH_delete
         self.AHdel.argtypes = [ctypes.c_void_p]
         self.AHdel.restype = None
+    
