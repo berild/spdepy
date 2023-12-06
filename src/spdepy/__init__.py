@@ -7,6 +7,7 @@ __version__ = version("spdepy")
 from spdepy.spdes import spde_init
 from spdepy.grids import grid
 from .model import Model
+from .optim import Optimize as optim
 from .datasets import *
 
 def model(**kwargs) -> Model:
