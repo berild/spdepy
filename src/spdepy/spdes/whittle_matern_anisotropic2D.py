@@ -107,9 +107,9 @@ class WhittleMaternAnisotropic2D:
         Hs = self.getH(gamma = par[9:18],vx = par[18:27], vy = par[27:36]) 
         lkappa = self.grid.evalB(par = par[0:9])
         Dk =  sparse.diags(np.exp(lkappa)) 
-        A_mat = Dv@Dk - self.Ah(Hs)
         Dv = self.grid.Dv
         iDv = self.grid.iDv
+        A_mat = Dv@Dk - self.Ah(Hs)
         Q = A_mat.transpose()@iDv@A_mat
         Q_c = Q + self.S.transpose()@self.S*np.exp(par[36])
         Q_fac = cholesky(Q)
