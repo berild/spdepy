@@ -27,7 +27,7 @@ class WhittleMatern2D:
             self.setQ(par = par)
     
     def getPars(self) -> np.ndarray:
-        return(np.hstack([self.kappa,self.gamma,self.vx,self.vy,self.tau]))
+        return(np.hstack([self.kappa,self.gamma,self.tau]))
     
     def setPars(self,par) -> None:
         self.kappa = par[0:9]
@@ -116,7 +116,7 @@ class WhittleMatern2D:
             vtmp = (2*np.random.randint(1,3,self.grid.Ns*nh1)-3).reshape(self.grid.Ns,nh1)
             TrQ = Q_fac.solve_A(vtmp)
             TrQc = Q_c_fac.solve_A(vtmp)
-            g_par = np.zeros(18)
+            g_par = np.zeros(19)
             
             g_par[18] = self.S.shape[0]*self.r/2 - 1/2*(TrQc*(self.S.transpose()@self.S*np.exp(par[18])@vtmp)).sum()*self.r/nh1 - np.exp(par[18])/2*((data - self.S@mu_c)**2).sum()
 
