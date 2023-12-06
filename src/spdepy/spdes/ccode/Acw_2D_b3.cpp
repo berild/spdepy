@@ -1,13 +1,14 @@
 
 #include <cmath>
 #include <vector> 
-
+#include <iostream>
+using namespace std;
 
 // periodic boundary conditions
 class Aw
 {
     public:
-        Aw(int numX, int numY, double G[2],double hx,double hy);
+        Aw(int numX, int numY, double G[2], double hx,  double hy,int diff);
         int* Row();
         int* Col();
         double* Val();
@@ -17,7 +18,7 @@ class Aw
         ~Aw(); // deconstructor
 };
 // constuctor 
-Aw::Aw(int numX, int numY, double G[2],double hx,double hy)
+Aw::Aw(int numX,int numY, double G[2],double hx, double hy,int diff)
 {
     int idx = 0;
     row = new int [numX*numY*5];
@@ -30,36 +31,57 @@ Aw::Aw(int numX, int numY, double G[2],double hx,double hy)
             int i_p = i + 1;
             int j_n = j - 1;
             int j_p = j + 1;
-            double rem = 0.0;
 
             k = int(j*numX + i);
+            double rem = 0.0;
             
-            val[idx] = (fabs(G[0]) + G[0] + fabs(G[2]) - G[2])*hy/2 + (fabs(G[1]) + G[1] + fabs(G[3]) - G[3])*hx/2;
-            val[idx + 1] = - (fabs(G[0]) - G[0])*hy/2;
-            val[idx + 2] = - (fabs(G[2]) + G[2])*hy/2;
-            val[idx + 3] = - (fabs(G[1]) - G[1])*hx/2;
-            val[idx + 4] = - (fabs(G[3]) + G[3])*hx/2;
-
-            if ( i == 0 ) {
-                i_n = numX-1;
-                val[idx + 2] = 0.0;
-            }else if ( i == (numX - 1) ){
-                i_p = 0;
-                val[idx + 1] = 0.0;
-            }
-            if ( j == 0 ){
-                j_n = numY - 1;
-                val[idx + 4] = 0.0;
-            }else if ( j == (numY - 1) ){
-                j_p = 0;
+            if (diff == 1){
+                val[idx] = G[0]/fabs(G[0])*hy + rem;
+                val[idx + 1] = - (G[0]/fabs(G[0]) - 1.0)*hy/2;
+                val[idx + 2] = - (G[0]/fabs(G[0]) + 1.0)*hy/2;
                 val[idx + 3] = 0.0;
+                val[idx + 4] = 0.0;
+            }else if (diff == 2){
+                val[idx] = G[1]/fabs(G[1])*hx + rem;
+                val[idx + 1] = 0.0;
+                val[idx + 2] = 0.0;
+                val[idx + 3] = - (G[1]/fabs(G[1]) - 1.0)*hx/2;
+                val[idx + 4] = - (G[1]/fabs(G[1]) + 1.0)*hx/2;
+            }else{
+                val[idx] = fabs(G[0])*hy + fabs(G[1])*hx + rem;
+                val[idx + 1] = - (fabs(G[0]) - G[0])*hy/2;
+                val[idx + 2] = - (fabs(G[0]) + G[0])*hy/2;
+                val[idx + 3] = - (fabs(G[1]) - G[1])*hx/2;
+                val[idx + 4] = - (fabs(G[1]) + G[1])*hx/2;
             }
+
 
             row[idx] = k;
-            row[idx + 1] = k;
-            row[idx + 2] = k;
-            row[idx + 3] = k;
-            row[idx + 4] = k;
+            
+            if ( i == (numX - 1) ){
+                row[idx + 1] = int(numX*numY);
+            }else{
+                row[idx + 1] = k;
+            }
+            
+            if ( i == 0 ) {
+                row[idx + 2] = int(numX*numY);
+            }else{
+                row[idx + 2] = k;
+            }
+
+            if ( j == (numY - 1) ){
+                row[idx + 3] = int(numX*numY);
+            }else{
+                row[idx + 3] = k;
+            }
+
+            if ( j == 0 ){
+                row[idx + 4] = int(numX*numY);
+            }else{
+                row[idx + 4] = k;
+            }
+            
             
             col[idx] = k;
             col[idx + 1] = int(j*numX + i_p);
@@ -98,8 +120,8 @@ double* Aw::Val()
 // Define C functions for the C++ class - as ctypes can only talk to C...
 extern "C"
 {
-    Aw* Aw_new(int numX, int numY, double G[2],double hx,double hy){
-        return new Aw(numX, numY, G,hx,hy);}
+    Aw* Aw_new(int numX,int numY, double G[2], double hx, double hy,int diff){
+        return new Aw(numX, numY, G,hx,hy,diff);}
     int* Aw_Row(Aw* aw) {return aw->Row();}
     int* Aw_Col(Aw* aw) {return aw->Col();}
     double* Aw_Val(Aw* aw) {return aw->Val();}
