@@ -31,7 +31,7 @@ AH::AH(int numX, int numY, double H[2][2],double hx,double hy)
 
             k = int(j*numX + i);
 
-            val[idx] = -2.0*hy/hx*(H[0][0] + H[0][0]) - 2.0*hx/hy*(H[1][1] + H[1][1]) + rem;
+            val[idx] = -2.0*hy/hx*H[0][0] - 2.0*hx/hy*H[1][1] + rem;
             val[idx + 1] = hy/hx*H[0][0];
             val[idx + 2] = hy/hx*H[0][0];
             val[idx + 3] = hx/hy*H[1][1];
@@ -40,30 +40,6 @@ AH::AH(int numX, int numY, double H[2][2],double hx,double hy)
             val[idx + 6] = 1.0/4.0*(H[0][1] + H[1][0]);
             val[idx + 7] = -1.0/4.0*(H[0][1] + H[1][0]);
             val[idx + 8] = -1.0/4.0*(H[0][1] + H[1][0]);
-
-            if ( i == 0 ) { 
-                i_n = numX - 1;
-                val[idx + 2] = 0.0;
-                val[idx + 6] = 0.0;
-                val[idx + 7] = 0.0;
-            }else if ( i == (numX - 1) ){
-                i_p = 0;
-                val[idx + 1] = 0.0;
-                val[idx + 5] = 0.0;
-                val[idx + 8] = 0.0;
-            }
-            if ( j == 0 ){
-                j_n = numY - 1;
-                val[idx + 4] = 0.0;
-                val[idx + 6] = 0.0;
-                val[idx + 8] = 0.0;
-            }else if ( j == (numY - 1) ){
-                j_p = 0;
-                val[idx + 3] = 0.0;
-                val[idx + 5] = 0.0;
-                val[idx + 7] = 0.0;
-            }
-            
 
             row[idx] = k;
             row[idx+1] = k;
@@ -74,6 +50,25 @@ AH::AH(int numX, int numY, double H[2][2],double hx,double hy)
             row[idx+6] = k;
             row[idx+7] = k;
             row[idx+8] = k;
+
+            if ( i == 0 ) { 
+                row[idx + 2] = int(numX*numY);
+                row[idx + 6] = int(numX*numY);
+                row[idx + 7] = int(numX*numY);
+            }else if ( i == (numX - 1) ){
+                row[idx + 1] = int(numX*numY);
+                row[idx + 5] = int(numX*numY);
+                row[idx + 8] = int(numX*numY);
+            }
+            if ( j == 0 ){
+                row[idx + 4] = int(numX*numY);
+                row[idx + 6] = int(numX*numY);
+                row[idx + 8] = int(numX*numY);
+            }else if ( j == (numY - 1) ){
+                row[idx + 3] = int(numX*numY);
+                row[idx + 5] = int(numX*numY);
+                row[idx + 7] = int(numX*numY);
+            }
             
             col[idx] = k;
             col[idx + 1] = int(j*numX + i_p);
