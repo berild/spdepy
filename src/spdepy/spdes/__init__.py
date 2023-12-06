@@ -54,7 +54,7 @@ def spde_init(model, grid, parameters = None, ani = True, ha = True, bc = 3, Q0 
                     return(CovAdvectionVarDiffusion2D(par = parameters, grid = grid, bc = bc, Q0 = Q0))
                 else:
                     from .cov_advection_var_idiffusion2D import CovAdvectionVarIDiffusion2D 
-                    return(CovAdvectionVarIDiffusion2D(par = parameters, grid = grid, bc = bc, Q0 = None))
+                    return(CovAdvectionVarIDiffusion2D(par = parameters, grid = grid, bc = bc, Q0 = Q0))
         elif (model == "var-advection-diffusion") or model == 6:
             if ha:
                 from .var_advection_ha_diffusion2D import VarAdvectionHaDiffusion2D
