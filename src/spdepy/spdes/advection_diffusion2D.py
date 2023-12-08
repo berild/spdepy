@@ -9,7 +9,7 @@ class AdvectionDiffusion2D:
     
     Parameters = log kappa^2, log gamma, vx, vy, wx, wy, log sigma, log tau
     """
-    def __init__(self,grid, par=None, bc = 3,Q0 = None) -> None:
+    def __init__(self, grid, par=None, bc = 3,Q0 = None) -> None:
         self.grid = grid
         self.type = "advection-diffusion-2D-bc%d"%(bc)
         self.Q = None
@@ -69,27 +69,32 @@ class AdvectionDiffusion2D:
 
     def makeQ(self, par, grad = True):
         assert self.Q0 is not None
+        # grid
         dt = self.grid.dt
         T = self.grid.T
         Ns = self.grid.Ns
         Dv = self.grid.Dv
         iDv = self.grid.iDv
+        # parameters
         kappa = np.exp(par[0])
         gamma = np.exp(par[1])
         vv = par[2:4]
         ws = par[4:6]
         sigma = np.exp(par[6])
+        # components
         Hs = gamma*np.eye(2) + vv[:,np.newaxis]*vv[np.newaxis,:]
         Dk =  kappa*sparse.eye(Ns) 
         As = Dv@Dk
         Qs = As.transpose()@iDv@As
         A = Dv + Dv@Dk*dt - self.Ah(Hs)*dt + self.Aw(ws)*dt
+        # precision matrix Q
         Q = sparse.bmat([[sigma*dt*self.Q0 + Qs, -Qs@iDv@A,sparse.csc_matrix((Ns,(T-2)*Ns))]])
         for t in range(T-2):
             Q = sparse.bmat([[Q],[sparse.bmat([[sparse.csc_matrix((Ns,(t)*Ns)),-A.T@iDv@Qs, A.T@iDv@Qs@iDv@A + Qs, -Qs@iDv@A,sparse.csc_matrix((Ns,(T-3-t)*Ns))]])]])
         Q = sparse.bmat([[Q],[sparse.bmat([[sparse.csc_matrix((Ns,(T-2)*Ns)),-A.T@iDv@Qs, A.T@iDv@Qs@iDv@A]])]])
         Q = 1/(dt*sigma)*Q.tocsc()
         Q_fac = cholesky(Q)
+        # gradient
         if grad:
             dQ = []
             # log kappa 2
@@ -128,7 +133,6 @@ class AdvectionDiffusion2D:
             tdQ = sparse.bmat([[tdQ],[sparse.bmat([[sparse.csc_matrix((Ns,(T-2)*Ns)),- dA.T@iDv@Qs , dA.T@iDv@Qs@iDv@A + A.T@iDv@Qs@iDv@dA]])]])
             dQ.append((1/(dt*sigma)*tdQ).tocsc())
             # wx
-            #dws = np.kron([1,1],[1,0]) + np.zeros((Ns,4))
             dA =  self.Aw(ws,diff = 1)*dt
             tdQ = sparse.bmat([[sparse.csc_matrix((Ns,Ns)), - Qs@iDv@dA,sparse.csc_matrix((Ns,(T-2)*Ns))]])
             for t in range(T-2):
@@ -136,7 +140,6 @@ class AdvectionDiffusion2D:
             tdQ = sparse.bmat([[tdQ],[sparse.bmat([[sparse.csc_matrix((Ns,(T-2)*Ns)),- dA.T@iDv@Qs, dA.T@iDv@Qs@iDv@A + A.T@iDv@Qs@iDv@dA]])]])
             dQ.append((1/(dt*sigma)*tdQ).tocsc())
             # wy
-            #dws = np.kron([1,1],[0,1]) + np.zeros((Ns,4))
             dA = self.Aw(ws,diff = 2)*dt
             tdQ = sparse.bmat([[sparse.csc_matrix((Ns,Ns)), - Qs@iDv@dA,sparse.csc_matrix((Ns,(T-2)*Ns))]])
             for t in range(T-2):
@@ -149,9 +152,9 @@ class AdvectionDiffusion2D:
                 tdQ = sparse.bmat([[tdQ],[sparse.bmat([[sparse.csc_matrix((Ns,(t)*Ns)),-A.T@iDv@Qs, A.T@iDv@Qs@iDv@A + Qs, -Qs@iDv@A,sparse.csc_matrix((Ns,(T-3-t)*Ns))]])]])
             tdQ = sparse.bmat([[tdQ],[sparse.bmat([[sparse.csc_matrix((Ns,(T-2)*Ns)),-A.T@iDv@Qs, A.T@iDv@Qs@iDv@A]])]])
             dQ.append((-1/(dt*sigma)*tdQ).tocsc())
-            return(Q,Q_fac,dQ)
+            return(Q, Q_fac, dQ)
         else:
-            return(Q,Q_fac)
+            return(Q, Q_fac)
 
     def logLike(self, par, nh1 = 100, grad = True):
         if grad:
@@ -192,7 +195,7 @@ class AdvectionDiffusion2D:
             return(like)
         
     
-    def Aw(self,ws,diff = 3) -> sparse.csc_matrix:
+    def Aw(self, ws, diff = 3) -> sparse.csc_matrix:
         if self.Awnew is None:
             self.setClib()
         M, N, T = self.grid.shape
@@ -210,7 +213,7 @@ class AdvectionDiffusion2D:
         self.Awdel(obj)
         return(res)
     
-    def Ah(self,Hs) -> sparse.csc_matrix:
+    def Ah(self, Hs) -> sparse.csc_matrix:
         if self.AHnew is None:
             self.setClib()
         M, N, T = self.grid.shape
@@ -240,9 +243,10 @@ class AdvectionDiffusion2D:
             else:
                 os.system('g++ -shared -o %s/ccode/lib_Acw_2D_b%d.so %s/ccode/Acw_2D_b%d.o'%(tmp,self.bc,tmp,self.bc))
             os.system('rm %s/ccode/Acw_2D_b%d.o'%(tmp,self.bc))
-        self.libAw = ctypes.cdll.LoadLibrary('%s/ccode/lib_Acw_2D_b%d.so'%(tmp,self.bc))
+            
         M, N, T = self.grid.shape
         
+        self.libAw = ctypes.cdll.LoadLibrary('%s/ccode/lib_Acw_2D_b%d.so'%(tmp,self.bc))
         self.Awnew = self.libAw.Aw_new
         self.Awnew.argtypes = [ctypes.c_int, ctypes.c_int, np.ctypeslib.ndpointer(dtype=np.float64,ndim = 1,shape = (2,)), ctypes.c_double,ctypes.c_double,ctypes.c_int]
         self.Awnew.restype = ctypes.c_void_p
