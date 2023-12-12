@@ -21,13 +21,13 @@ class WhittleMatern2D:
         self.AHnew = None
         self.Awnew = None
         if par is None: 
-            par = np.hstack([[-1]*9,[-0.5]*9,1])
+            par = np.hstack([[-1]*9,[-0.5]*9,1],dtype = "float64")
             self.setPars(par)
         else:
             self.setQ(par = par)
     
     def getPars(self) -> np.ndarray:
-        return(np.hstack([self.kappa,self.gamma,self.tau]))
+        return(np.hstack([self.kappa,self.gamma,self.tau],dtype = "float64"))
     
     def setPars(self,par) -> None:
         self.kappa = par[0:9]
@@ -38,7 +38,7 @@ class WhittleMatern2D:
     def initFit(self,data, **kwargs):
         #mod4: kappa(0:9), gamma(9:18), sigma(18)
         assert data.shape[0] <= self.grid.Ns
-        par = np.hstack([[-1]*9,[-0.5]*9,1])
+        par = np.hstack([[-1]*9,[-0.5]*9,1],dtype = "float64")
         self.data = data
         if self.data.ndim == 2:
             self.r = self.data.shape[1]
@@ -141,6 +141,7 @@ class WhittleMatern2D:
     def Ah(self,Hs) -> sparse.csc_matrix:
         if self.AHnew is None:
             self.setClib()
+        Hs = np.array(Hs,dtype = "float64")
         M, N = self.grid.shape
         obj = self.AHnew(M, N, Hs, self.grid.hx, self.grid.hy)
         row = self.AHrow(obj)
@@ -167,20 +168,20 @@ class WhittleMatern2D:
             else:
                 os.system('g++ -shared -o %s/ccode/lib_AH_2D_b%d.so %s/ccode/AH_2D_b%d.o'%(tmp,self.bc,tmp,self.bc))
             os.system('rm %s/ccode/AH_2D_b%d.o'%(tmp,self.bc))
-        self.lib = ctypes.cdll.LoadLibrary('%s/ccode/lib_AH_2D_b%d.so'%(tmp,self.bc))
-        self.AHnew = self.lib.AH_new
+        self.libAh = ctypes.cdll.LoadLibrary('%s/ccode/lib_AH_2D_b%d.so'%(tmp,self.bc))
+        self.AHnew = self.libAh.AH_new
         M, N = self.grid.shape
         self.AHnew.argtypes = [ctypes.c_int, ctypes.c_int, np.ctypeslib.ndpointer(dtype=np.float64,ndim=4,shape = (M*N,4,2,2)), ctypes.c_double,ctypes.c_double]
         self.AHnew.restype = ctypes.c_void_p
-        self.AHrow = self.lib.AH_Row
+        self.AHrow = self.libAh.AH_Row
         self.AHrow.argtypes = [ctypes.c_void_p]
         self.AHrow.restype = np.ctypeslib.ndpointer(dtype=ctypes.c_int, shape = (M*N*9,))
-        self.AHcol = self.lib.AH_Col
+        self.AHcol = self.libAh.AH_Col
         self.AHcol.argtypes = [ctypes.c_void_p]
         self.AHcol.restype = np.ctypeslib.ndpointer(dtype=ctypes.c_int, shape = (M*N*9,))
-        self.AHval = self.lib.AH_Val
+        self.AHval = self.libAh.AH_Val
         self.AHval.argtypes = [ctypes.c_void_p]
         self.AHval.restype = np.ctypeslib.ndpointer(dtype=ctypes.c_double, shape = (M*N*9,))
-        self.AHdel = self.lib.AH_delete
+        self.AHdel = self.libAh.AH_delete
         self.AHdel.argtypes = [ctypes.c_void_p]
         self.AHdel.restype = None

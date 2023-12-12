@@ -17,15 +17,16 @@ class WhittleMaternHa2D:
         self.AHnew = None
         self.Awnew = None
         if par is None: 
-            par = np.hstack([[-1]*9,[-0.5]*9, [2]*9, [2.1]*9,1])
+            par = np.hstack([[-1]*9,[-0.5]*9, [2]*9, [2.1]*9,1],dtype="float64")
             self.setPars(par)
         else:
             self.setQ(par = par)
     
     def getPars(self) -> np.ndarray:
-        return(np.hstack([self.kappa,self.gamma,self.vx,self.vy,self.tau]))
+        return(np.hstack([self.kappa,self.gamma,self.vx,self.vy,self.tau],dtype="float64"))
     
     def setPars(self,par) -> None:
+        par = np.array(par,dtype="float64")
         self.kappa = par[0:9]
         self.gamma = par[9:18]
         self.vx = par[18:27]
@@ -46,7 +47,7 @@ class WhittleMaternHa2D:
     def initFit(self,data, **kwargs):
         #mod4: kappa(0:9), gamma(9:18), vx(18:27), vy(27:36), sigma(36)
         assert data.shape[0] <= self.grid.Ns
-        par = np.hstack([[-1]*9,[-0.5]*9, [2]*9, [2.1]*9,1])
+        par = np.hstack([[-1]*9,[-0.5]*9, [2]*9, [2.1]*9,1],dtype="float64")
         self.data = data
         if self.data.ndim == 2:
             self.r = self.data.shape[1]
@@ -176,6 +177,7 @@ class WhittleMaternHa2D:
         if self.AHnew is None:
             self.setClib()
         M, N = self.grid.shape
+        Hs = np.array(Hs,dtype = "float64")
         obj = self.AHnew(M, N, Hs, self.grid.hx, self.grid.hy)
         row = self.AHrow(obj)
         col = self.AHcol(obj)
