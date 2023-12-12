@@ -22,7 +22,7 @@ class AdvectionHaDiffusion2D:
         self.AHnew = None
         self.Awnew = None
         if par is None:
-            par = np.array([-1,-1,1,1,10,10,-1,1])
+            par = np.array([-1,-1,1,1,10,10,-1,1],dtype="float64")
             self.setPars(par)
         else:
             self.setQ(par = par)
