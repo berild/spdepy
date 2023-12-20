@@ -178,7 +178,7 @@ class CovAdvectionIDiffusion2D:
             self.setClib()
         M, N ,T = self.grid.shape
         ws = np.array(ws,dtype = "float64")
-        obj = self.Awnew(M, N, ws, self.grid.hx, self.grid.hy, diff)
+        obj = self.Awnew(M, N, ws, self.grid.hx, self.grid.hy, diff,np.zeros((M*N,4),dtype = "float64"))
         row = self.Awrow(obj)
         col = self.Awcol(obj)
         val = self.Awval(obj)
@@ -224,7 +224,7 @@ class CovAdvectionIDiffusion2D:
         self.libAw = ctypes.cdll.LoadLibrary('%s/ccode/lib_Aw_2D_b%d.so'%(tmp,self.bc))
         M, N, T = self.grid.shape
         self.Awnew = self.libAw.Aw_new
-        self.Awnew.argtypes = [ctypes.c_int, ctypes.c_int, np.ctypeslib.ndpointer(dtype=np.float64,ndim=2,shape = (M*N,4)), ctypes.c_double,ctypes.c_double,ctypes.c_int]
+        self.Awnew.argtypes = [ctypes.c_int, ctypes.c_int, np.ctypeslib.ndpointer(dtype=np.float64,ndim=2,shape = (M*N,4)), ctypes.c_double,ctypes.c_double,ctypes.c_int, np.ctypeslib.ndpointer(dtype=np.float64,ndim=2,shape = (M*N,4))]
         self.Awnew.restype = ctypes.c_void_p
         self.Awrow = self.libAw.Aw_Row
         self.Awrow.argtypes = [ctypes.c_void_p]
