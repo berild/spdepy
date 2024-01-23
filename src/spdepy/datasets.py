@@ -44,12 +44,9 @@ def get_sinmod_training():
 def get_sinmod_validation():
     xtmp = np.array([ 99, 149,   1])
     ytmp = np.array([24, 69,  1])
-    ttmp = np.array([  0, 144,   1])
     T = 10
-    dt = 10.0
     xdom = np.arange(xtmp[0],xtmp[1],xtmp[2])
     ydom = np.arange(ytmp[0],ytmp[1],ytmp[2])
-    tdom = np.arange(ttmp[0],ttmp[1],ttmp[2])
 
     ffile = 'SINMOD_28_05_21.nc'
     tmp = os.path.dirname(__file__)
@@ -135,87 +132,95 @@ def get_sinmod_validation():
     return({'dataS':mutS, 'data':mut,'idxS': idxS, 'idx': idx,'tS': tS,'tag':tag})
 
 def get_sinmod_test():
+    circ = 40075000
+
     xtmp = np.array([ 99, 149,   1])
     ytmp = np.array([24, 69,  1])
     ttmp = np.array([  0, 144,   1])
     T = 10
-    dt = 10.0
     xdom = np.arange(xtmp[0],xtmp[1],xtmp[2])
     ydom = np.arange(ytmp[0],ytmp[1],ytmp[2])
-    tdom = np.arange(ttmp[0],ttmp[1],ttmp[2])
 
     ffile = ['AUV_08_09_22','AUV2_08_09_22']
     tmpF = os.path.dirname(__file__)
     nc = Dataset(tmpF+"/data/" + "SINMOD_27_05_21.nc")
+
     x = np.array(nc['xc'][xdom])
     y = np.array(nc['yc'][ydom])
     t = np.arange(0,T*10.0,T)
+
     M = x.shape[0]
     N = y.shape[0]
     lon = np.array(nc['gridLons'][:,:])
     lat = np.array(nc['gridLats'][:,:])
+
     glat = lat[ytmp[0]:ytmp[1],xtmp[0]:xtmp[1]].transpose().flatten()
     glon = lon[ytmp[0]:ytmp[1],xtmp[0]:xtmp[1]].transpose().flatten()
-    res = []
+
+    tfile = ffile[0]
+    ttmp = np.array(tfile.split('_')[1:],dtype="int32")
+    time = np.array([datetime.datetime(2000 + ttmp[2] ,ttmp[1],ttmp[0],0) + datetime.timedelta(minutes=x) for x in nc['time'][:]*24*60])
+    time_emu = np.array([datetime.datetime.timestamp(x) for x in time])
+
+    rlat = list()
+    rlon = list()
+    rz = list()
+    rsal = list()
+    timestamp = list()
     for tfile in ffile:
-        ttmp = np.array(tfile.split('_')[1:],dtype="int32")
-        time = np.array([datetime.datetime(2000 + ttmp[2] ,ttmp[1],ttmp[0],0) + datetime.timedelta(minutes=x) for x in nc['time'][:]*24*60])
         eta_hat_df = pd.read_csv(tmpF +'/data/'+ tfile + "_EstimatedState.csv")
         salinity_df  = pd.read_csv(tmpF + "/data/" + tfile + "_Salinity.csv")
         on = salinity_df.columns[np.where(['timestamp' in x for x in salinity_df.columns])[0][0]]
         df = pd.merge_asof(eta_hat_df,salinity_df,on=on,direction="nearest")
-        circ = 40075000
-        R = 6371 * 10**3
-        rlat = (eta_hat_df[" lat (rad)"] + eta_hat_df[" x (m)"]*np.pi*2.0/circ).to_numpy()
-        rlon = (eta_hat_df[" lon (rad)"] + eta_hat_df[" y (m)"]*np.pi*2.0/(circ*np.cos(rlat))).to_numpy()
-        idx = np.arange(rlat.shape[0])
-        tidx = np.zeros(idx.shape) + 1
-        rz = df[' depth (m)'].to_numpy()[idx]
-        rm = (rz > 0.15)*(rz < 1.5)
-        rlat = (rlat[idx]*180/np.pi)[rm]
-        rlon = (rlon[idx]*180/np.pi)[rm]
-        rsal = df[' value (psu)'].to_numpy()[idx][rm]
-        rz = df[' depth (m)'].to_numpy()[idx][rm]
-        timestamp = df[on].to_numpy()[idx][rm]
-        idxs = np.zeros(rsal.size)
-        for i in range(rsal.size):
-            tmp = np.nanargmin(np.sqrt((rlat[i]-glat)**2 + (rlon[i]-glon)**2))
-            tmpx= np.floor(tmp/N).astype("int32")
-            tmpy= tmp - tmpx*N
-            idxs[i] = tmpy*M  + tmpx
-        si = 0
-        u_idx = list()
-        u_data = list()
-        u_sd = list()
-        u_time = list()
-        u_fold = list()
-        for i in range(1,idxs.size):
-            if idxs[i-1] != idxs[i]:
-                ei = i
-                u_idx.append(idxs[si])
-                u_data.append(rsal[si:ei].mean())
-                u_sd.append(rsal[si:ei].std())
-                u_time.append(timestamp[si:ei].mean())
-                u_fold.append(tidx[si])
-                si = i
-        time_emu = np.array([datetime.datetime.timestamp(x) for x in time])
-        time_data = np.array(u_time)
-        timeidx = np.zeros(time_data.shape)
-        for i in range(time_data.shape[0]):
-            timeidx[i] = np.nanargmin((time_emu-time_data[i])**2)
-        timeidx = timeidx.astype('int32')
-        u_sd  = np.array(u_sd)
-        u_sd[u_sd < 0.0001] = 1.0
-        data  = pd.DataFrame({'idx': np.array(u_idx).astype("int32"), 'tidx': timeidx.astype('int32'), 'data': u_data, 'sd': u_sd, 'timestamp': u_time, 'time': time[timeidx]})
-        tidxu = data['tidx'].unique()
-        tmpidx = np.arange(data['tidx'].min(),data['tidx'].min()+10)
-        while tmpidx[0] < tidxu.max():
-            res.append([data[data['tidx'] == j] for j in tmpidx])
-            tidxS = np.where(tidxu>tmpidx[-1])[0]
-            if tidxS.size == 0:
-                break
-            tmpidx = np.arange(tidxu[tidxS.min()],tidxu[tidxS.min()]+10)
-    data = [pd.concat([res[0][i],res[1][i]],ignore_index=True) for i in range(10)]
+
+        trlat = (eta_hat_df[" lat (rad)"] + eta_hat_df[" x (m)"]*np.pi*2.0/circ).to_numpy()
+        trlon = (eta_hat_df[" lon (rad)"] + eta_hat_df[" y (m)"]*np.pi*2.0/(circ*np.cos(trlat))).to_numpy()
+
+        trz = df[' depth (m)'].to_numpy()
+        rm = (trz > 0.15)*(trz < 1.5)
+        trlat = (trlat*180/np.pi)[rm]
+        trlon = (trlon*180/np.pi)[rm]
+        trsal = df[' value (psu)'].to_numpy()[rm]
+        trz = trz[rm]
+        timestamp.append(df[on].to_numpy()[rm])
+        rlat.append(trlat)
+        rlon.append(trlon)
+        rz.append(trz)
+        rsal.append(trsal)
+
+    timestamp = np.hstack(timestamp)
+    rlat = np.hstack(rlat)
+    rlon = np.hstack(rlon)
+    rz = np.hstack(rz)
+    rsal = np.hstack(rsal)
+
+    timeidx = np.zeros(timestamp.shape)
+    idxs = np.zeros(rsal.size)
+    for i in range(rsal.size):
+        tmp = np.nanargmin(np.sqrt((rlat[i]-glat)**2 + (rlon[i]-glon)**2))
+        tmpx= np.floor(tmp/N).astype("int32")
+        tmpy= tmp - tmpx*N
+        idxs[i] = tmpy*M  + tmpx
+        timeidx[i] = np.nanargmin((time_emu-timestamp[i])**2)
+    timeidx = timeidx.astype('int32')
+
+    u_idx = list()
+    u_tidx = list()
+    u_data = list()
+    u_sd = list()
+    u_timestamp = list()
+    uniQ_i = np.unique(idxs)
+    uniQ_ti = np.unique(timeidx)
+    for t in range(uniQ_ti.size):
+        for i in range(uniQ_i.size):
+            tmp = np.where((idxs == uniQ_i[i])*(timeidx == uniQ_ti[t]))[0]
+            if tmp.size > 1:
+                u_idx.append(uniQ_i[i])
+                u_tidx.append(uniQ_ti[t])
+                u_data.append(rsal[tmp].mean())
+                u_sd.append(rsal[tmp].std())
+                u_timestamp.append(timestamp[tmp].mean())
+    data  = pd.DataFrame({'idx': np.array(u_idx, dtype = "int32"), 'tidx': np.array(u_tidx,dtype = 'int32'), 'data': np.array(u_data,dtype = "float64"), 'sd': np.array(u_sd,dtype = "float64"), 'timestamp': np.array(u_timestamp,dtype = "float64")})
     tag = "sinmod_test"
     return({'data': data,'tag':tag})
 
