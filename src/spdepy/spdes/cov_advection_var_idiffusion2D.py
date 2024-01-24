@@ -11,7 +11,7 @@ class CovAdvectionVarIDiffusion2D:
     """
     def __init__(self,grid,par=None,bc = 3, Q0 = None, ww = None) -> None:
         self.grid = grid
-        self.type = "cov-advection-idiffusion-2D-bc%d"%(bc)
+        self.type = "cov-advection-var-idiffusion-2D-bc%d"%(bc)
         self.Q = None
         self.Q_fac = None
         self.data = None
