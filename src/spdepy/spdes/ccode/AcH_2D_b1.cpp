@@ -3,6 +3,8 @@
 
 class AH
 {
+    // Construction of diffusion matrix of the solution of 2D Advection-Diffsion equation
+    // Neumann boundary conditions with derivative equal zero one the boundaries
     public:
         AH(int numX, int numY, double H[2][2],double hx,double hy);
         int* Row();
@@ -15,7 +17,7 @@ class AH
 };
 // constuctor 
 AH::AH(int numX, int numY, double H[2][2],double hx,double hy)
-{
+{   
     int idx = 0;
     row = new int [numX*numY*9];
     col = new int [numX*numY*9];
