@@ -141,7 +141,7 @@ def get_sinmod_test():
     xdom = np.arange(xtmp[0],xtmp[1],xtmp[2])
     ydom = np.arange(ytmp[0],ytmp[1],ytmp[2])
 
-    ffile = ['AUV_08_09_22','AUV2_08_09_22']
+    ffile = ['AUV2_08_09_22']#,'AUV2_08_09_22']
     tmpF = os.path.dirname(__file__)
     nc = Dataset(tmpF+"/data/" + "SINMOD_27_05_21.nc")
 
@@ -177,7 +177,7 @@ def get_sinmod_test():
         trlon = (eta_hat_df[" lon (rad)"] + eta_hat_df[" y (m)"]*np.pi*2.0/(circ*np.cos(trlat))).to_numpy()
 
         trz = df[' depth (m)'].to_numpy()
-        rm = (trz > 0.15)*(trz < 1.5)
+        rm = (trz > 0.25)*(trz < 1.0)
         trlat = (trlat*180/np.pi)[rm]
         trlon = (trlon*180/np.pi)[rm]
         trsal = df[' value (psu)'].to_numpy()[rm]
@@ -207,27 +207,26 @@ def get_sinmod_test():
     u_idx = list()
     u_tidx = list()
     u_data = list()
-    u_sd = list()
+    u_var = list()
     u_timestamp = list()
     uniQ_i = np.unique(idxs)
     uniQ_ti = np.unique(timeidx)
     for t in range(uniQ_ti.size):
         for i in range(uniQ_i.size):
             tmp = np.where((idxs == uniQ_i[i])*(timeidx == uniQ_ti[t]))[0]
-            if tmp.size > 1:
+            if tmp.size > 4:
                 u_idx.append(uniQ_i[i])
                 u_tidx.append(uniQ_ti[t])
                 u_data.append(rsal[tmp].mean())
-                u_sd.append(rsal[tmp].std())
+                u_var.append(rsal[tmp].var())
                 u_timestamp.append(timestamp[tmp].mean())
-    data  = pd.DataFrame({'idx': np.array(u_idx, dtype = "int32"), 'tidx': np.array(u_tidx,dtype = 'int32'), 'data': np.array(u_data,dtype = "float64"), 'sd': np.array(u_sd,dtype = "float64"), 'timestamp': np.array(u_timestamp,dtype = "float64")})
+    rm = np.array(u_var,dtype = "float64") > 0.001
+    u_idx = np.array(u_idx)[rm]
+    u_tidx = np.array(u_tidx)[rm]
+    u_data = np.array(u_data)[rm]
+    u_var = np.array(u_var)[rm]
+    u_timestamp = np.array(u_timestamp)[rm]
+    data  = pd.DataFrame({'idx': np.array(u_idx, dtype = "int32"), 'tidx': np.array(u_tidx,dtype = 'int32'), 'data': np.array(u_data,dtype = "float64"), 'var': np.array(u_var,dtype = "float64"), 'timestamp': np.array(u_timestamp,dtype = "float64")})
     tag = "sinmod_test"
     return({'data': data,'tag':tag})
-
-    # all measurments, idxs, and datetime
-    # 09.09.2022
-    # 08.09.2022 
-    # 11.05.2022
-    # 10.05 2022
-    # 27.05.2021
     
