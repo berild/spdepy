@@ -20,10 +20,6 @@ class Model:
         self.useCov = False
         self.sigmas = np.log(np.array([0.01,140]))
 
-    #def setGrid(self,x = None, y = None,extend = None) -> None:
-    #    self.grid.setGrid(x = x, y = y,extend = extend)
-    #    self.setQ()
-
     def setQ(self,par = None) -> None:
         self.mod.setQ(par=par)
         
@@ -76,11 +72,11 @@ class Model:
     def sample(self, n = 1, simple = False) -> np.ndarray:
         #self.setModel(mu = self.mu,sigmas = self.sigmas, useCov = self.useCov)
         if not self.useCov:
-            z = np.random.normal(size = np.prod(self.grid.shape)*n).reshape(np.prod(self.grid.shape),n)
+            z = np.random.normal(size = self.Q.shape[0]*n).reshape(self.Q.shape[0],n)
             self.Q_fac = cholesky(self.Q)
             data = self.grid.getS()@(self.Q_fac.apply_Pt(self.Q_fac.solve_Lt(z,use_LDLt_decomposition=False))+self.mu[:,np.newaxis]) 
         else:
-            z = np.random.normal(size = (np.prod(self.grid.shape)+2)*n).reshape(np.prod(self.grid.shape)+2,n)
+            z = np.random.normal(size = self.Q.shape[0]*n).reshape(self.Q.shape[0],n)
             self.Q_fac = cholesky(self.Q)
             data = self.grid.getS()@(self.Q_fac.apply_Pt(self.Q_fac.solve_Lt(z,use_LDLt_decomposition=False))+self.mu[:,np.newaxis]) 
         if not simple:
@@ -89,7 +85,7 @@ class Model:
     
     def qinv(self,simple = False):
         if simple:
-            z = self.sample(n = 1000, simple = True)
+            z = self.sample(n = 1000)
             self.mvar = z.var(axis = 1)
         else:
             if self.Q is None:
@@ -97,36 +93,34 @@ class Model:
             import rpy2.robjects as robj
             import os
             tmp = os.path.dirname(__file__)
-            robj.r.source(+'rqinv.R')
-            tshape = self.Q.shape
-            Q = self.Q.tocoo()
-            r = Q.row
-            c = Q.col
-            v = Q.data
-            tmpQinv =  np.array(robj.r.rqinv(robj.r["sparseMatrix"](i = robj.FloatVector(r+1),j = robj.FloatVector(c+1),x = robj.FloatVector(v))))
-            self.pQinv = sparse.csc_matrix((np.array(tmpQinv[:,2],dtype = "float32"), (np.array(tmpQinv[:,0],dtype="int32"), np.array(tmpQinv[:,1],dtype="int32"))), shape=tshape)
-            self.mvar = self.pQinv.diagonal()
+            robj.r.source(tmp+'/rqinv.R')
+            if not self.useCov:
+                Q = self.Q.tocoo()
+                tshape = self.Q.shape
+                r = Q.row
+                c = Q.col
+                v = Q.data
+                tmpQinv =  np.array(robj.r.rqinv(robj.r["sparseMatrix"](i = robj.FloatVector(r+1),j = robj.FloatVector(c+1),x = robj.FloatVector(v))))
+                self.pQinv = sparse.csc_matrix((np.array(tmpQinv[:,2],dtype = "float32"), (np.array(tmpQinv[:,0],dtype="int32"), np.array(tmpQinv[:,1],dtype="int32"))), shape=tshape)
+                self.mvar = self.pQinv.diagonal()
+            else:
+                Q = (self.grid.getS()@self.Q@self.grid.getS().T).tocoo()
+                tshape = self.Q.shape
+                r = Q.row
+                c = Q.col
+                v = Q.data
+                tmpQinv =  np.array(robj.r.rqinv(robj.r["sparseMatrix"](i = robj.FloatVector(r+1),j = robj.FloatVector(c+1),x = robj.FloatVector(v))))
+                self.pQinv = sparse.csc_matrix((np.array(tmpQinv[:,2],dtype = "float32"), (np.array(tmpQinv[:,0],dtype="int32"), np.array(tmpQinv[:,1],dtype="int32"))), shape=tshape)
+                self.mvar = self.pQinv.diagonal()
             
-    def update(self, y, idx, grad = False):
+    def update(self, y, idx, tau = None):
+        if tau is None:
+            tau = self.tau
         S = self.grid.getS(idx)
-        self.Q = self.Q + S.transpose()@S*self.tau
+        self.Q = self.Q + S.transpose()@S*tau
         self.Q_fac = cholesky(self.Q)
-        tmp = self.Q_fac.solve_A(S.T@(y-S@self.mu))*self.tau
+        tmp = self.Q_fac.solve_A(S.T@(y-S@self.mu))*tau
         self.mu = self.mu + tmp
-        if grad and hasattr(self.sigmas, "__len__"):
-            dQ1 = sparse.csc_matrix((self.Q.shape[0],self.Q.shape[1])).tolil()
-            dQ1[self.Q.shape[0]-2,self.Q.shape[1]-2] = self.Q[self.Q.shape[0]-2,self.Q.shape[1]-2]
-            dmu1 = self.Q_fac.solve_A(dQ1.tocsc()@tmp)
-            dQ2 = sparse.csc_matrix((self.Q.shape[0],self.Q.shape[1])).tolil()
-            dQ2[self.Q.shape[0]-1,self.Q.shape[1]-1] = self.Q[self.Q.shape[0]-1,self.Q.shape[1]-1]
-            dmu2 = self.Q_fac.solve_A(dQ2.tocsc()@tmp)
-            self.dmu = np.stack([dmu1,dmu2],axis = 1)
-        elif grad:
-            dQ1 = sparse.csc_matrix((self.Q.shape[0],self.Q.shape[1])).tolil()
-            dQ1[self.Q.shape[0]-1,self.Q.shape[1]-1] = self.Q[self.Q.shape[0]-1,self.Q.shape[1]-1]
-            dmu1 = self.Q_fac.solve_A(dQ1.tocsc()@tmp)
-            self.dmu = dmu1
-        
         
     def setModel(self, mu = None, sigmas = None, useCov = None):
         self.useCov = useCov if useCov is not None else self.useCov
@@ -136,7 +130,7 @@ class Model:
                 self.grid.addCov(mu)
                 self.Q = sparse.block_diag([self.mod.Q.copy(),np.diag(np.exp(self.sigmas))]).tocsc()
                 self.mu = np.zeros(self.Q.shape[0])
-                self.mu[-2:] = [0,1]
+                self.mu[-2:] = [0,mu.max()]
                 self.tau = np.exp(self.mod.tau)
             else:
                 self.grid.addInt()
