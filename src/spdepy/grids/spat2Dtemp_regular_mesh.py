@@ -25,20 +25,46 @@ class Grid:
         self.Ne = 0
         self.setGrid()
         self.setDv()
+        self.S = None
+        self.cov = None
+        self.inter = False
+        self.n2eidx = None
+        self.Ae = None
+        
+    def setS(self):
+        idxs = np.arange(self.M*self.N*self.T)
+        idxs2 = self.n2e(idxs)
+        S = sparse.csc_matrix((self.M*self.N*self.T,np.prod(self.shape))).tolil()
+        S[idxs,idxs2] = 1
+        if self.cov is not None:
+            if self.inter:
+                self.S = sparse.bmat([[S,np.stack([np.ones(self.cov.shape[0]),self.cov/self.cov.max()],axis = 1)]]).tocsc()
+            else:
+                self.S = sparse.bmat([[S,self.cov.reshape(-1,1)]]).tocsc()
+        elif self.inter:
+            self.S = sparse.bmat([[S,np.ones(self.M*self.N*self.T).reshape(-1,1)]]).tocsc()
+        else:
+            self.S = S.tocsc()
 
     def getS(self, idxs = None) -> sparse.csc_matrix:
+        if self.S is None:
+            self.setS()
         if idxs is None:
-            S = np.zeros((self.M*self.N,(self.M+self.Ne*2)*(self.N+self.Ne*2)))
-            for i in range(self.M):
-                for j in range(self.N):
-                    ke = (i+self.Ne)+(j+self.Ne)*(self.M+2*self.Ne)
-                    k = i+j*self.M
-                    S[k,ke] = 1
-            S = sparse.csc_matrix(S)
-            return(sparse.block_diag([S]*self.T))
-        else:
-            return(sparse.csc_matrix((np.ones(idxs.shape[0]),(idxs[:,0],idxs[:,1])),shape=(self.M*self.N,(self.M+self.Ne*2)*(self.N+self.Ne*2))))
+            return(self.S)
+        return(self.S.tolil()[idxs,:].tocsc())
+        
+    def addCov(self,cov: np.ndarray, inter = True) -> None:
+        self.inter = inter
+        self.cov = cov
+        self.setS()
     
+    def addInt(self) -> None:
+        self.inter = True
+        self.setS()
+    
+    def idx2pos(self,idx):
+        pass
+        
     def getIdx(self,pos: np.ndarray):
         """getIdx find the index of a position in the grid
 
@@ -48,6 +74,18 @@ class Grid:
             position in the grid (idx X, idx Y, idx T)
         """
         return((pos[0]+self.Ne)+(pos[1]+self.Ne)*(self.M+2*self.Ne)+ pos[2]*self.Ns)
+    
+    def n2e(self,idx):
+        if self.n2eidx is None:
+            self.n2eidx = {}
+            for t in range(self.T):
+                for j in range(self.N):
+                    for i in range(self.M):
+                        self.n2eidx[i+j*self.M+t*self.M*self.N] = (i+self.Ne)+(j+self.Ne)*(self.M+2*self.Ne)+t*(self.M+2*self.Ne)*(self.N+2*self.Ne)
+        if hasattr(idx,"__len__"):
+            return(np.array([self.n2eidx[i] for i in idx]))                
+        return(self.n2eidx[idx])
+
     
     @property
     def shape(self):
@@ -87,6 +125,10 @@ class Grid:
         sx, sy = np.meshgrid(self.x,self.y)
         self.sx = sx.flatten()
         self.sy = sy.flatten()
+        self.iy, self.it, self.ix = np.meshgrid(np.arange(self.N),np.arange(self.T),np.arange(self.M))
+        self.ix = self.ix.flatten()
+        self.iy = self.iy.flatten()
+        self.it = self.it.flatten()
         self.basisN()
         self.basisH()
         self.basisA()
@@ -293,45 +335,47 @@ class Grid:
         
     def advBound(self,ww):
         if self.isExtended:
-            Ae = np.zeros((self.Ns,self.M*self.N))
-            for i in range(self.M+self.Ne*2):
-                for j in range(self.N+self.Ne*2):
-                    k = i+j*(self.M+2*self.Ne)
-                    if i < self.Ne and j < self.Ne:
-                        if i >= j:
-                            Ae[k,0] = j/self.Ne
-                        else:
-                            Ae[k,0] = i/self.Ne
-                        continue
-                    if i >= self.M + self.Ne and j >= self.N + self.Ne:
-                        if self.N - j <= self.M - i:
-                            Ae[k,self.M*self.N-1] = (self.N+self.Ne*2-1-j)/self.Ne
-                        else:
-                            Ae[k,self.M*self.N-1] = (self.M+self.Ne*2-1-i)/self.Ne
-                        continue
-                    if i >= self.M + self.Ne and j < self.Ne:
-                        if self.M+self.Ne*2-1-i <= j:
-                            Ae[k,self.M-1] = (self.M+self.Ne*2-1-i)/self.Ne
-                        else:
-                            Ae[k,self.M-1] = j/self.Ne
-                        continue
-                    if i < self.Ne and j >= self.N + self.Ne:
-                        if i <= self.N+self.Ne*2-1-j:
-                            Ae[k,self.M*(self.N-1)] = i/self.Ne
-                        else:
-                            Ae[k,self.M*(self.N-1)] = (self.N+self.Ne*2-1-j)/self.Ne
-                        continue
-                    if i < self.Ne:
-                        Ae[k,(j-self.Ne)*self.M] = i/self.Ne
-                    elif i >= self.M + self.Ne:
-                        Ae[k,self.M-1+(j-self.Ne)*self.M] = (self.M+self.Ne*2-1-i)/self.Ne
-                    if j < self.Ne:
-                        Ae[k,i-self.Ne] = j/self.Ne
-                    elif j >= self.N + self.Ne:
-                        Ae[k,i-self.Ne+(self.N-1)*self.M] = (self.N+self.Ne*2-1-j)/self.Ne
-                    if i >= self.Ne and j >= self.Ne and i < self.M + self.Ne and j < self.N + self.Ne:
-                        Ae[k,(i-self.Ne) + (j-self.Ne)*(self.M)] = 1
-            return(Ae@ww)
+            if self.Ae is None:
+                Ae = np.zeros((self.Ns,self.M*self.N))
+                for i in range(self.M+self.Ne*2):
+                    for j in range(self.N+self.Ne*2):
+                        k = i+j*(self.M+2*self.Ne)
+                        if i < self.Ne and j < self.Ne:
+                            if i >= j:
+                                Ae[k,0] = j/self.Ne
+                            else:
+                                Ae[k,0] = i/self.Ne
+                            continue
+                        if i >= self.M + self.Ne and j >= self.N + self.Ne:
+                            if self.N - j <= self.M - i:
+                                Ae[k,self.M*self.N-1] = (self.N+self.Ne*2-1-j)/self.Ne
+                            else:
+                                Ae[k,self.M*self.N-1] = (self.M+self.Ne*2-1-i)/self.Ne
+                            continue
+                        if i >= self.M + self.Ne and j < self.Ne:
+                            if self.M+self.Ne*2-1-i <= j:
+                                Ae[k,self.M-1] = (self.M+self.Ne*2-1-i)/self.Ne
+                            else:
+                                Ae[k,self.M-1] = j/self.Ne
+                            continue
+                        if i < self.Ne and j >= self.N + self.Ne:
+                            if i <= self.N+self.Ne*2-1-j:
+                                Ae[k,self.M*(self.N-1)] = i/self.Ne
+                            else:
+                                Ae[k,self.M*(self.N-1)] = (self.N+self.Ne*2-1-j)/self.Ne
+                            continue
+                        if i < self.Ne:
+                            Ae[k,(j-self.Ne)*self.M] = i/self.Ne
+                        elif i >= self.M + self.Ne:
+                            Ae[k,self.M-1+(j-self.Ne)*self.M] = (self.M+self.Ne*2-1-i)/self.Ne
+                        if j < self.Ne:
+                            Ae[k,i-self.Ne] = j/self.Ne
+                        elif j >= self.N + self.Ne:
+                            Ae[k,i-self.Ne+(self.N-1)*self.M] = (self.N+self.Ne*2-1-j)/self.Ne
+                        if i >= self.Ne and j >= self.Ne and i < self.M + self.Ne and j < self.N + self.Ne:
+                            Ae[k,(i-self.Ne) + (j-self.Ne)*(self.M)] = 1
+                self.Ae = Ae    
+            return(self.Ae@ww)
         else:
             return(ww)
         
