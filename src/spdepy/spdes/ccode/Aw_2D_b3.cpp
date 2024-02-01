@@ -5,6 +5,8 @@
 // periodic boundary conditions
 class Aw
 {
+    // Construction of advection matrix of the solution of 2D Advection-Diffsion equation
+    // Dirichlet boundary conditions with derivative equal zero one the boundaries
     public:
         Aw(int numX, int numY, const double (*G)[4],double hx,double hy, int diff, const double (*dG)[4]);
         int* Row();
@@ -29,24 +31,23 @@ Aw::Aw(int numX, int numY, const double (*G)[4],double hx,double hy, int diff, c
             int i_p = i + 1;
             int j_n = j - 1;
             int j_p = j + 1;
-            double rem = 0.0;
 
             k = int(j*numX + i);
             
             if (diff == 1){
-                val[idx] = (G[k][0]/fabs(G[k][0])*dG[k][0] + dG[k][0] + G[k][2]/fabs(G[k][2])*dG[k][2] - dG[k][2])*hy/2 + rem;
+                val[idx] = (G[k][0]/fabs(G[k][0])*dG[k][0] + dG[k][0] + G[k][2]/fabs(G[k][2])*dG[k][2] - dG[k][2])*hy/2;
                 val[idx + 1] = - (G[k][0]/fabs(G[k][0])*dG[k][0] - dG[k][0])*hy/2;
                 val[idx + 2] = - (G[k][2]/fabs(G[k][2])*dG[k][2] + dG[k][2])*hy/2;
                 val[idx + 3] = 0.0;
                 val[idx + 4] = 0.0;
             }else if (diff == 2){
-                val[idx] =  (G[k][1]/fabs(G[k][1])*dG[k][1] + dG[k][1] + G[k][3]/fabs(G[k][3])*dG[k][3] - dG[k][3])*hx/2 + rem;
+                val[idx] =  (G[k][1]/fabs(G[k][1])*dG[k][1] + dG[k][1] + G[k][3]/fabs(G[k][3])*dG[k][3] - dG[k][3])*hx/2;
                 val[idx + 1] = 0.0;
                 val[idx + 2] = 0.0;
                 val[idx + 3] = - (G[k][1]/fabs(G[k][1])*dG[k][1] - dG[k][1])*hx/2;
                 val[idx + 4] = - (G[k][3]/fabs(G[k][3])*dG[k][3] + dG[k][3])*hx/2;
             }else{
-                val[idx] = (fabs(G[k][0]) + G[k][0] + fabs(G[k][2]) - G[k][2])*hy/2 + (fabs(G[k][1]) + G[k][1] + fabs(G[k][3]) - G[k][3])*hx/2 + rem;
+                val[idx] = (fabs(G[k][0]) + G[k][0] + fabs(G[k][2]) - G[k][2])*hy/2 + (fabs(G[k][1]) + G[k][1] + fabs(G[k][3]) - G[k][3])*hx/2;
                 val[idx + 1] = - (fabs(G[k][0]) - G[k][0])*hy/2;
                 val[idx + 2] = - (fabs(G[k][2]) + G[k][2])*hy/2;
                 val[idx + 3] = - (fabs(G[k][1]) - G[k][1])*hx/2;
