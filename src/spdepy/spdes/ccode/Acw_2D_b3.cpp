@@ -4,9 +4,10 @@
 #include <iostream>
 using namespace std;
 
-// periodic boundary conditions
 class Aw
 {
+    // Construction of advection matrix of the solution of 2D Advection-Diffsion equation
+    // Dirichiet boundary conditions with value equal zero one the boundaries
     public:
         Aw(int numX, int numY, double G[2], double hx,  double hy,int diff);
         int* Row();
