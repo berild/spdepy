@@ -21,18 +21,41 @@ class Grid:
         self.Ne = 0
         self.setGrid()
         self.setDv()
+        self.S = None
+        self.cov = None
+        self.inter = False
+        self.n2eidx = None
+        
+    def setS(self):
+        idxs = np.arange(self.M*self.N)
+        idxs2 = self.n2e(idxs)
+        S = sparse.csc_matrix((self.M*self.N,np.prod(self.shape))).tolil()
+        S[idxs,idxs2] = 1
+        if self.cov is not None:
+            if self.inter:
+                self.S = sparse.bmat([[S,np.stack([np.ones(self.cov.shape[0]),self.cov/self.cov.max()],axis = 1)]]).tocsc()
+            else:
+                self.S = sparse.bmat([[S,self.cov.reshape(-1,1)]]).tocsc()
+        elif self.inter:
+            self.S = sparse.bmat([[S,np.ones(self.M*self.N).reshape(-1,1)]]).tocsc()
+        else:
+            self.S = S.tocsc()    
 
     def getS(self, idxs = None) -> sparse.csc_matrix:
+        if self.S is None:
+            self.setS()
         if idxs is None:
-            S = np.zeros((self.M*self.N,(self.M+self.Ne*2)*(self.N+self.Ne*2)))
-            for i in range(self.M):
-                for j in range(self.N):
-                    ke = (i+self.Ne)+(j+self.Ne)*(self.M+2*self.Ne)
-                    k = i+j*self.M
-                    S[k,ke] = 1
-            return(sparse.csc_matrix(S))
-        else:
-            return(sparse.csc_matrix((np.ones(idxs.shape[0]),(idxs[:,0],idxs[:,1])),shape=(self.M*self.N,(self.M+self.Ne*2)*(self.N+self.Ne*2))))
+            return(self.S)
+        return(self.S.tolil()[idxs,:].tocsc())
+    
+    def addCov(self,cov: np.ndarray, inter = True) -> None:
+        self.inter = inter
+        self.cov = cov
+        self.setS()
+        
+    def addInt(self) -> None:
+        self.inter = True
+        self.setS()
     
     def getIdx(self,pos: np.ndarray):
         """getIdx find the index of a position in the grid
@@ -43,6 +66,17 @@ class Grid:
             position in the grid (idx X, idx Y)
         """
         return((pos[0]+self.Ne)+(pos[1]+self.Ne)*(self.M+2*self.Ne))
+    
+    
+    def n2e(self,idx):
+        if self.n2eidx is None:
+            self.n2eidx = {}
+            for j in range(self.N):
+                for i in range(self.M):
+                    self.n2eidx[i+j*self.M] = (i+self.Ne)+(j+self.Ne)*(self.M+2*self.Ne)
+        if hasattr(idx,"__len__"):
+            return(np.array([self.n2eidx[i] for i in idx]))                
+        return(self.n2eidx[idx])
     
     @property
     def shape(self):
