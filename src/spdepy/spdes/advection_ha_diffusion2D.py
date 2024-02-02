@@ -260,8 +260,10 @@ class AdvectionHaDiffusion2D:
             else:
                 os.system('g++ -shared -o %s/ccode/lib_Acw_2D_b%d.so %s/ccode/Acw_2D_b%d.o'%(tmp,self.bc,tmp,self.bc))
             os.system('rm %s/ccode/Acw_2D_b%d.o'%(tmp,self.bc))
-        self.libAw = ctypes.cdll.LoadLibrary('%s/ccode/lib_Acw_2D_b%d.so'%(tmp,self.bc))
+            
         M, N, T = self.grid.shape
+        
+        self.libAw = ctypes.cdll.LoadLibrary('%s/ccode/lib_Acw_2D_b%d.so'%(tmp,self.bc))
         self.Awnew = self.libAw.Aw_new
         self.Awnew.argtypes = [ctypes.c_int, ctypes.c_int, np.ctypeslib.ndpointer(dtype=np.float64,shape = (2,)), ctypes.c_double,ctypes.c_double,ctypes.c_int]
         self.Awnew.restype = ctypes.c_void_p
