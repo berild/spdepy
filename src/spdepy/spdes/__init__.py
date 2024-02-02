@@ -77,6 +77,17 @@ def spde_init(model, grid, parameters = None, ani = True, ha = True, bc = 3, Q0 
                 else:
                     from .var_advection_var_idiffusion2D import VarAdvectionVarIDiffusion2D
                     return(VarAdvectionVarIDiffusion2D(par = parameters, grid = grid, bc = bc, Q0 = Q0))
+        elif (model == "seperable-spatial-temporal") or model == 8:
+            if ha:
+                from .seperable_spatial_temporal_ha2D import SeperableSpatialTemporalHa2D
+                return(SeperableSpatialTemporalHa2D(par = parameters, grid = grid, bc = bc))
+            else:
+                if ani:
+                    from .seperable_spatial_temporal2D import SeperableSpatialTemporal2D
+                    return(SeperableSpatialTemporal2D(par = parameters, grid = grid, bc = bc))
+                else:
+                    from .seperable_spatial_temporal_idiffusion2D import SeperableSpatialTemporalIDiffusion2D
+                    return(SeperableSpatialTemporalIDiffusion2D(par = parameters, grid = grid, bc = bc))
         else:
             assert False, "Model not implemented"
     elif grid.sdim == 3:
