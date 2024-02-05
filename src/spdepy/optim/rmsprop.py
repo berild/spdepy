@@ -12,6 +12,8 @@ class RMSprop:
             self.gf2 = gf**2
         else:
             self.gf2 = self.memory*self.gf2 + (1-self.memory) * gf**2
+        if hasattr(self.gf2,"__len__"):
+            self.gf2[self.gf2 == 0] = 1
         self.dx = self.decay*self.dx - lr*gf/np.sqrt(self.gf2)
         return(x + self.dx)
     
