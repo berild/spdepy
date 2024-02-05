@@ -28,6 +28,8 @@ class Optimize:
         ----------
         x0 : np.ndarray
             Initial parameters for the model
+        end : str, optional
+            Filename to save the results to, by default None
         kwargs : dict
             Settings for the optimization process. 
             {fun:, stepType:, pol:, truth:, verbose:, lr:, max_steps:}
@@ -37,7 +39,8 @@ class Optimize:
         self.step.settings(**kwargs)
         while not self.stop():
             self.f, self.jac = self.fun(self.x)
-            self.fitviz()
+            if self.verbose:
+                self.fitviz()
             self.histF.append(self.f)
             self.histJac.append(self.jac)
             if hasattr(self.lr, "__len__"):
