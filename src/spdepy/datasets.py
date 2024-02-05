@@ -143,7 +143,10 @@ def get_sinmod_test():
 
     ffile = ['AUV2_08_09_22']#,'AUV2_08_09_22']
     tmpF = os.path.dirname(__file__)
-    nc = Dataset(tmpF+"/data/" + "SINMOD_27_05_21.nc")
+    nc = Dataset(tmpF+"/data/" + "SINMOD_08_09_22.nc")
+    
+    wn = np.array(nc['v_north'][:,0,ydom,xdom]).swapaxes(0,2).swapaxes(0,1).reshape(xdom.shape[0]*ydom.shape[0],-1).mean(axis=1)
+    we = np.array(nc['u_east'][:,0,ydom,xdom]).swapaxes(0,2).swapaxes(0,1).reshape(xdom.shape[0]*ydom.shape[0],-1).mean(axis=1)
 
     x = np.array(nc['xc'][xdom])
     y = np.array(nc['yc'][ydom])
@@ -228,5 +231,5 @@ def get_sinmod_test():
     u_timestamp = np.array(u_timestamp)[rm]
     data  = pd.DataFrame({'idx': np.array(u_idx, dtype = "int32"), 'tidx': np.array(u_tidx,dtype = 'int32'), 'data': np.array(u_data,dtype = "float64"), 'var': np.array(u_var,dtype = "float64"), 'timestamp': np.array(u_timestamp,dtype = "float64")})
     tag = "sinmod_test"
-    return({'data': data,'tag':tag})
+    return({'data': data,'tag':tag, 'we': np.array(we,dtype = "float64"), 'wn': np.array(wn,dtype = "float64")})
     
