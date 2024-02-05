@@ -6,7 +6,7 @@
 class Aw
 {
     public:
-        Aw(int numX, int numY, const double (*G)[4],double hx,double hy);
+        Aw(int numX, int numY, const double G[2],double hx,double hy,int diff);
         int* Row();
         int* Col();
         double* Val();
@@ -16,7 +16,7 @@ class Aw
         ~Aw(); // deconstructor
 };
 // constuctor 
-Aw::Aw(int numX, int numY, const double (*G)[4],double hx,double hy)
+Aw::Aw(int numX, int numY, const double G[2],double hx,double hy,int diff)
 {
     int idx = 0;
     row = new int [numX*numY*5];
@@ -44,6 +44,26 @@ Aw::Aw(int numX, int numY, const double (*G)[4],double hx,double hy)
 
             k = int(j*numX + i);
 
+            if (diff == 1){
+                val[idx] = G[0]/fabs(G[0])*hy + rem;
+                val[idx + 1] = - (G[0]/fabs(G[0]) - 1.0)*hy/2;
+                val[idx + 2] = - (G[0]/fabs(G[0]) + 1.0)*hy/2;
+                val[idx + 3] = 0.0;
+                val[idx + 4] = 0.0;
+            }else if (diff == 2){
+                val[idx] = G[1]/fabs(G[1])*hx;
+                val[idx + 1] = 0.0;
+                val[idx + 2] = 0.0;
+                val[idx + 3] = - (G[1]/fabs(G[1]) - 1.0)*hx/2;
+                val[idx + 4] = - (G[1]/fabs(G[1]) + 1.0)*hx/2;
+            }else{
+                val[idx] = fabs(G[0])*hy + fabs(G[1])*hx;
+                val[idx + 1] = - (fabs(G[0]) - G[0])*hy/2;
+                val[idx + 2] = - (fabs(G[0]) + G[0])*hy/2;
+                val[idx + 3] = - (fabs(G[1]) - G[1])*hx/2;
+                val[idx + 4] = - (fabs(G[1]) + G[1])*hx/2;
+            }
+
             row[idx] = k;
             row[idx + 1] = k;
             row[idx + 2] = k;
@@ -55,12 +75,6 @@ Aw::Aw(int numX, int numY, const double (*G)[4],double hx,double hy)
             col[idx + 2] = int(j*numX + i_n);
             col[idx + 3] = int(j_p*numX + i);
             col[idx + 4] = int(j_n*numX + i);
-    
-            val[idx] = (fabs(G[k][0]) + G[k][0] + fabs(G[k][2]) - G[k][2])*hy/2 + (fabs(G[k][1]) + G[k][1] + fabs(G[k][3]) - G[k][3])*hx/2;
-            val[idx + 1] = - (fabs(G[k][0]) - G[k][0])*hy/2;
-            val[idx + 2] = - (fabs(G[k][2]) + G[k][2])*hy/2;
-            val[idx + 3] = - (fabs(G[k][1]) - G[k][1])*hx/2;
-            val[idx + 4] = - (fabs(G[k][3]) + G[k][3])*hx/2;
 
             idx += 5;
         }
@@ -93,8 +107,8 @@ double* Aw::Val()
 // Define C functions for the C++ class - as ctypes can only talk to C...
 extern "C"
 {
-    Aw* Aw_new(int numX, int numY, const double (*G)[4],double hx,double hy){
-        return new Aw(numX, numY, G,hx,hy);}
+    Aw* Aw_new(int numX, int numY, const double G[2],double hx,double hy, int diff){
+        return new Aw(numX, numY, G,hx,hy,diff);}
     int* Aw_Row(Aw* aw) {return aw->Row();}
     int* Aw_Col(Aw* aw) {return aw->Col();}
     double* Aw_Val(Aw* aw) {return aw->Val();}
