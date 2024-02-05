@@ -18,7 +18,7 @@ class VarAdvectionVarIDiffusion2D:
         self.AHnew = None
         self.Awnew = None
         if par is None:
-            par = np.hstack([[-1]*9,[3]*9,[5]*18,-1,1],dtype="float64")
+            par = np.hstack([[-1]*9,[3]*9,[5]*18,-4,1],dtype="float64")
             self.setPars(par)
         else:
             self.setQ(par = par)
