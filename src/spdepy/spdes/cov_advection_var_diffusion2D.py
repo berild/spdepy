@@ -24,9 +24,7 @@ class CovAdvectionVarDiffusion2D:
         self.Awnew = None
         if par is None:
             par = np.hstack([[-1]*9,[3]*9,[2]*9,[2]*9,1,-4,1],dtype="float64")
-            self.setPars(par)
-        else:
-            self.setQ(par = par)
+        self.setPars(par)
     
     def getPars(self):
         return(np.hstack([self.kappa,self.gamma,self.vx,self.vy,self.lamb,self.sigma,self.tau],dtype = "float64"))
