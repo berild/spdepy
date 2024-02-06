@@ -1,7 +1,8 @@
 import numpy as np
 from .rmsprop import RMSprop
 from .sgd import SGD
-#from .adagrad import Adagrad
+from .ada_grad import Adagrad
+from .ada_delta import AdaDelta
 
 class Optimize:
     def __init__(self, fun = None) -> None:
@@ -130,6 +131,12 @@ class Optimize:
             self.step = RMSprop()
         elif stepType == "sgd":
             self.step = SGD()
+        elif stepType == "adagrad":
+            self.step = Adagrad()
+        elif stepType == "adadelta":
+            self.step = AdaDelta()
+        else:
+            raise ValueError("Step type not recognized")
         
     def polyak(self) -> np.ndarray:
         """polyak averages the last steps in the optimization process
