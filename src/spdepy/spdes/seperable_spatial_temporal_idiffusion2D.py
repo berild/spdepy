@@ -20,7 +20,7 @@ class SeperableSpatialTemporalIDiffusion2D:
         self.bc = bc
         self.AHnew = None
         if par is None: 
-            par = np.hstack([[-1]*9,[3]*9,-0.1,1,1],dtype="float64")
+            par = np.hstack([[-1]*9,[-1]*9,0.1,1,1],dtype="float64")
             self.setPars(par)
         else:
             self.setQ(par = par)
@@ -37,7 +37,7 @@ class SeperableSpatialTemporalIDiffusion2D:
 
     def initFit(self,data, **kwargs):
         assert data.shape[0] <= self.grid.n
-        par = np.hstack([[-1]*9,[3]*9,-0.1,1,1],dtype="float64")
+        par = np.hstack([[-1]*9,[-1]*9,0.1,1,1],dtype="float64")
         self.data = data
         if self.data.ndim == 2:
             self.r = self.data.shape[1]

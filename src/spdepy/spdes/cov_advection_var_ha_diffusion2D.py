@@ -23,7 +23,7 @@ class CovAdvectionVarHaDiffusion2D:
         self.AHnew = None
         self.Awnew = None
         if par is None:
-            par = np.hstack([[-1]*9,[-1]*9,[2]*9,[2]*9,1,-4,1],dtype = "float64")
+            par = np.hstack([[-1]*9,[-1]*9,[0.1]*9,[0.1]*9,0.1,0,1],dtype = "float64")
         self.setPars(par)
     
     def getPars(self):
@@ -58,7 +58,7 @@ class CovAdvectionVarHaDiffusion2D:
         assert kwargs.get("ww") is not None or self.ww is not None
         self.Q0 = kwargs.get("Q0") if kwargs.get("Q0") is not None else self.Q0
         self.ww = kwargs.get("ww") if kwargs.get("ww") is not None else self.ww
-        par = np.hstack([[-1]*9,[-1]*9,[2]*9,[2]*9,1,-4,1],dtype="float64")
+        par = np.hstack([[-1]*9,[-1]*9,[0.1]*9,[0.1]*9,0.1,0,1],dtype = "float64")
         self.dA_w = self.Aw(self.ww)
         self.data = data
         if self.data.ndim == 2:

@@ -21,7 +21,7 @@ class WhittleMaternAnisotropic2D:
         self.AHnew = None
         self.Awnew = None
         if par is None: 
-            par = np.hstack([[-1]*9,[-0.5]*9, [2]*9, [2.1]*9,1],dtype = "float64")
+            par = np.hstack([[-1]*9,[-1]*9, [0.1]*9, [0.1]*9,1],dtype = "float64")
             self.setPars(par)
         else:
             self.setQ(par = par)
@@ -41,7 +41,7 @@ class WhittleMaternAnisotropic2D:
     def initFit(self,data, **kwargs):
         #mod4: kappa(0:9), gamma(9:18), vx(18:27), vy(27:36), sigma(36)
         assert data.shape[0] <= self.grid.Ns
-        par = np.hstack([[-1]*9,[-0.5]*9, [2]*9, [2.1]*9,1],dtype = "float64")
+        par = np.hstack([[-1]*9,[-1]*9, [0.1]*9, [0.1]*9,1],dtype = "float64")
         self.data = data
         if self.data.ndim == 2:
             self.r = self.data.shape[1]

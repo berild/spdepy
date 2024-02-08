@@ -22,7 +22,7 @@ class AdvectionIDiffusion2D:
         self.AHnew = None
         self.Awnew = None
         if par is None:
-            par = np.array([-1,3,5,5,-4,1])
+            par = np.array([-1,-1,0.1,0.1,0,1])
             self.setPars(par)
         else:
             self.setQ(par = par)
@@ -43,7 +43,7 @@ class AdvectionIDiffusion2D:
         assert data.shape[0] <= self.grid.n
         assert kwargs.get("Q0") is not None or self.Q0 is not None
         self.Q0 = kwargs.get("Q0") if kwargs.get("Q0") is not None else self.Q0
-        par = np.array([-1,3,5,5,-4,1])
+        par = np.array([-1,-1,0.1,0.1,0,1])
         self.data = data
         if self.data.ndim == 2:
             self.r = self.data.shape[1]

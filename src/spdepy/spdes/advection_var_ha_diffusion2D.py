@@ -18,7 +18,7 @@ class AdvectionVarHaDiffusion2D:
         self.AHnew = None
         self.Awnew = None
         if par is None:
-            par = np.hstack([[-1]*9,[-11]*9,[1]*9,[1]*9,10,10,-4,1], dtype = "float64")
+            par = np.hstack([[-1]*9,[-1]*9,[0.1]*9,[0.1]*9,0.1,0.1,0,1], dtype = "float64")
             self.setPars(par)
         else:
             self.setQ(par = par)
@@ -54,7 +54,7 @@ class AdvectionVarHaDiffusion2D:
         assert data.shape[0] <= self.grid.n 
         assert kwargs.get("Q0") is not None or self.Q0 is not None
         self.Q0 = kwargs.get("Q0") if kwargs.get("Q0") is not None else self.Q0
-        par = np.hstack([[-1]*9,[-1]*9,[1]*9,[1]*9,10,10,-4,1],dtype="float64")
+        par = np.hstack([[-1]*9,[-1]*9,[0.1]*9,[0.1]*9,0.1,0.1,0,1], dtype = "float64")
         self.data = data
         if self.data.ndim == 2:
             self.r = self.data.shape[1]
