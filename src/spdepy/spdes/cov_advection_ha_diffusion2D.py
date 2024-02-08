@@ -23,7 +23,7 @@ class CovAdvectionHaDiffusion2D:
         self.AHnew = None
         self.Awnew = None
         if par is None:
-            par = np.array([-1,-1,1,1,1,-4,1],dtype="float64")
+            par = np.array([-1,-1,0.01,0.01,0.01,0,1],dtype="float64")
         self.setPars(par)
     
     def getPars(self):
@@ -55,7 +55,7 @@ class CovAdvectionHaDiffusion2D:
         assert kwargs.get("ww") is not None or self.ww is not None
         self.Q0 = kwargs.get("Q0") if kwargs.get("Q0") is not None else self.Q0
         self.ww = kwargs.get("ww") if kwargs.get("ww") is not None else self.ww
-        par = np.array([-1,-1,1,1,1,-4,1],dtype="float64")
+        par = np.array([-1,-1,0.01,0.01,0.01,0,1],dtype="float64")
         self.dA_w = self.Aw(self.ww)
         self.data = data
         if self.data.ndim == 2:
@@ -131,7 +131,7 @@ class CovAdvectionHaDiffusion2D:
             tdQ = sparse.bmat([[tdQ],[sparse.bmat([[sparse.csc_matrix((Ns,(T-2)*Ns)),- dA.T@iDv@Qs , dA.T@iDv@Qs@iDv@A + A.T@iDv@Qs@iDv@dA]])]])
             dQ.append(1/(dt*sigma)*tdQ.tocsc())
             # vx
-            dHs = gamma*vx/aV*(sinh_aV*np.eye(2) + (cosh_aV - sinh_aV/aV)/aV*mV + sinh_aV*np.array([[1,0],[0,-1]]))
+            dHs = gamma/aV*(vx*sinh_aV*np.eye(2) + vx/aV*(cosh_aV - sinh_aV/aV)*mV + sinh_aV*np.array([[1,0],[0,-1]]))
             dA = - self.Ah(dHs)*dt
             tdQ = sparse.bmat([[sparse.csc_matrix((Ns,Ns)), - Qs@iDv@dA,sparse.csc_matrix((Ns,(T-2)*Ns))]])
             for t in range(T-2):
@@ -139,7 +139,7 @@ class CovAdvectionHaDiffusion2D:
             tdQ = sparse.bmat([[tdQ],[sparse.bmat([[sparse.csc_matrix((Ns,(T-2)*Ns)),- dA.T@iDv@Qs , dA.T@iDv@Qs@iDv@A + A.T@iDv@Qs@iDv@dA]])]])
             dQ.append(1/(dt*sigma)*tdQ.tocsc())
             # vy
-            dHs = gamma*vy/aV*(sinh_aV*np.eye(2) + (cosh_aV - sinh_aV/aV)/aV*mV + sinh_aV*np.array([[0,1],[1,0]]))
+            dHs = gamma/aV*(vy*sinh_aV*np.eye(2) + vy/aV*(cosh_aV - sinh_aV/aV)*mV + sinh_aV*np.array([[0,1],[1,0]]))
             dA = - self.Ah(dHs)*dt
             tdQ = sparse.bmat([[sparse.csc_matrix((Ns,Ns)), - Qs@iDv@dA,sparse.csc_matrix((Ns,(T-2)*Ns))]])
             for t in range(T-2):
