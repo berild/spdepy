@@ -122,15 +122,18 @@ class Model:
         tmp = self.Q_fac.solve_A(S.T@(y-S@self.mu))*tau
         self.mu = self.mu + tmp
         
-    def setModel(self, mu = None, sigmas = None, useCov = None):
+    def setModel(self, mu = None, sigmas = None, useCov = None,scale = True):
         self.useCov = useCov if useCov is not None else self.useCov
         if useCov:
             self.sigmas = sigmas if sigmas is not None else self.sigmas
             if hasattr(self.sigmas, "__len__"):
-                self.grid.addCov(mu)
+                self.grid.addCov(mu, scale = scale)
                 self.Q = sparse.block_diag([self.mod.Q.copy(),np.diag(np.exp(self.sigmas))]).tocsc()
-                self.mu = np.zeros(self.Q.shape[0])
-                self.mu[-2:] = [0,mu.max()]
+                if scale:
+                    self.mu = np.zeros(self.Q.shape[0])
+                    self.mu[-2:] = [0,mu.max()]
+                else:
+                    self.mu = np.zeros(self.Q.shape[0]) if mu is None else self.grid.getS().T@mu
                 self.tau = np.exp(self.mod.tau)
             else:
                 self.grid.addInt()
