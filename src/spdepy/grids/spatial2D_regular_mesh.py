@@ -25,6 +25,7 @@ class Grid:
         self.cov = None
         self.inter = False
         self.n2eidx = None
+        self.scale = False
         
     def setS(self):
         idxs = np.arange(self.M*self.N)
@@ -33,7 +34,10 @@ class Grid:
         S[idxs,idxs2] = 1
         if self.cov is not None:
             if self.inter:
-                self.S = sparse.bmat([[S,np.stack([np.ones(self.cov.shape[0]),self.cov/self.cov.max()],axis = 1)]]).tocsc()
+                if self.scale:
+                    self.S = sparse.bmat([[S,np.stack([np.ones(self.cov.shape[0]),self.cov/self.cov.max()],axis = 1)]]).tocsc()
+                else:
+                    self.S = sparse.bmat([[S,np.stack([np.ones(self.cov.shape[0]),self.cov],axis = 1)]]).tocsc()
             else:
                 self.S = sparse.bmat([[S,self.cov.reshape(-1,1)]]).tocsc()
         elif self.inter:
@@ -48,7 +52,7 @@ class Grid:
             return(self.S)
         return(self.S.tolil()[idxs,:].tocsc())
     
-    def addCov(self,cov: np.ndarray, inter = True) -> None:
+    def addCov(self,cov: np.ndarray, inter = True,scale = False) -> None:
         self.inter = inter
         self.cov = cov
         self.setS()
