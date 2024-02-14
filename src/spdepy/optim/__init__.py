@@ -3,6 +3,7 @@ from .rmsprop import RMSprop
 from .sgd import SGD
 from .ada_grad import Adagrad
 from .ada_delta import AdaDelta
+from .adam import Adam 
 
 class Optimize:
     def __init__(self, fun = None) -> None:
@@ -15,8 +16,8 @@ class Optimize:
         self.lr = 0.1
         self.jac = None
         self.histJac = []
-        self.stepType = "rmsprop"
-        self.step = RMSprop()
+        self.stepType = "adam"
+        self.step = Adam()
         self.fun = fun
         self.opt_steps = 0
         self.pol = 10
@@ -38,6 +39,7 @@ class Optimize:
         assert self.fun is not None or kwargs.get("fun") is not None
         self.settings(**kwargs)
         self.step.settings(**kwargs)
+        self.step.printInit()
         while not self.stop():
             self.f, self.jac = self.fun(self.x)
             if self.verbose:
@@ -46,7 +48,11 @@ class Optimize:
             self.histJac.append(self.jac)
             if hasattr(self.lr, "__len__"):
                 lr = self.lr[self.opt_steps]
+            if self.fix is not None:
+                keep = self.x[self.fix]
             self.x = self.step(self.x,self.f,self.jac,lr)
+            if self.fix is not None:
+                self.x[self.fix] = keep
             self.histX.append(self.x)
             self.opt_steps += 1
         self.x = self.polyak()
@@ -93,6 +99,8 @@ class Optimize:
             self.setFun(kwargs.get("fun"))
         if kwargs.get("stepType") is not None:
             self.setStep(kwargs.get("stepType"))
+        else:
+            self.setStep(self.stepType)
         if kwargs.get("pol") is not None:
             self.pol = kwargs.get("pol")
         if kwargs.get("verbose") is not None:
@@ -105,6 +113,7 @@ class Optimize:
             self.lr = kwargs.get("lr")
             if hasattr(self.lr, "__len__") and self.max_steps is None:
                 self.max_steps = len(self.lr)
+        self.fix = kwargs.get("fix")
         self.truth = kwargs.get("truth")
             
     def setFun(self,fun) -> None:
@@ -135,6 +144,8 @@ class Optimize:
             self.step = Adagrad()
         elif stepType == "adadelta":
             self.step = AdaDelta()
+        elif stepType == "adam":
+            self.step = Adam()
         else:
             raise ValueError("Step type not recognized")
         
