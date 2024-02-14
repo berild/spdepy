@@ -2,7 +2,7 @@ import numpy as np
 
 class RMSprop:
     def __init__(self,decay = None, memory = None):
-        self.decay = 0.5 if decay is None else decay
+        self.decay = 0.0 if decay is None else decay
         self.memory = 0.9 if memory is None else memory
         self.gf2 = None
         self.dx = 0
@@ -22,3 +22,12 @@ class RMSprop:
             self.decay = kwargs.get("decay")
         if kwargs.get("memory") is not None:
             self.memory = kwargs.get("memory")
+        self.reset()
+        
+    def reset(self) -> None:
+        self.gf2 = None
+        self.dx = 0
+        
+    def printInit(self) -> None:
+        print(f"RMSprop optimizer with decay: {self.decay}, memory: {self.memory}")
+        print("--------------------------------------------------------------")
