@@ -29,12 +29,12 @@ def get_sinmod_training():
     mut = []
     muB = np.hstack([mu]*T)
     for i in range(0,144-15,15):
-        mut.append(data[:,i:(i+T)].T.reshape(-1))
-    mut = np.array(mut).T - muB[:,np.newaxis]
-    mut = mut + rng.normal(size = mut.shape)*np.sqrt(1/3)
+        mut.append((data[:,i:(i+T)] - data[:,i:(i+T)].mean(axis = 1)[:,np.newaxis]).T.reshape(-1))
+    mut = np.array(mut).T
+    mut = np.array(mut) + rng.normal(size = mut.shape)*np.sqrt(1/100)
     
     rho = np.sum((data[:,1:]-mu[:,np.newaxis])*(data[:,:(data.shape[1]-1)] - mu[:,np.newaxis]),axis = 1)/np.sum((data[:,:(data.shape[1]-1)] - mu[:,np.newaxis])**2,axis = 1)
-    muf = (data[:,1:]-mu[:,np.newaxis]) - rho[:,np.newaxis]*(data[:,:(data.shape[1]-1)] - mu[:,np.newaxis]) + rng.normal(0,1/np.sqrt(3),data.shape[0]*(data.shape[1]-1)).reshape(data.shape[0],data.shape[1]-1)
+    muf = (data[:,1:]-mu[:,np.newaxis]) - rho[:,np.newaxis]*(data[:,:(data.shape[1]-1)] - mu[:,np.newaxis]) + rng.normal(0,np.sqrt(1/100),data.shape[0]*(data.shape[1]-1)).reshape(data.shape[0],data.shape[1]-1)
     #muf = (data[:,1:]- data[:,:(data.shape[1]-1)]) + np.random.normal(0,1/np.sqrt(3),data.shape[0]*(data.shape[1]-1)).reshape(data.shape[0],data.shape[1]-1)
 
     lr = np.hstack([np.linspace(0.2,0.1,200),np.linspace(0.1,0.05,200),np.linspace(0.05,0.01,200),np.linspace(0.01,0.00000001,200)])
@@ -120,8 +120,8 @@ def get_sinmod_validation():
     mut = np.array(mut).T
     mutS = np.stack(mutS,axis = 2)
     rng = np.random.default_rng(seed=1234)
-    mut = mut + rng.normal(size = mut.shape)*np.sqrt(1/3)
-    mutS = mutS + rng.normal(size = mutS.shape)*np.sqrt(1/3)
+    mut = mut + rng.normal(size = mut.shape)*np.sqrt(1/100)
+    mutS = mutS + rng.normal(size = mutS.shape)*np.sqrt(1/100)
     iS = np.array([rng.choice(x.shape[0], 200, replace=True) for i in range(1)]).T
     jS = np.array([rng.choice(y.shape[0], 200, replace=True) for i in range(1)]).T
     tS = np.array([rng.choice(t.shape[0], 200, replace=True) for i in range(1)]).T
