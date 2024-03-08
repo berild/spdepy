@@ -9,7 +9,7 @@ class AdvectionDiffusion2D:
     
     Parameters = log kappa^2, log gamma, vx, vy, wx, wy, log sigma, log tau
     """
-    def __init__(self, grid, par=None, bc = 3,Q0 = None) -> None:
+    def __init__(self, grid, par=None, bc = 3, Q0 = None) -> None:
         self.grid = grid
         self.type = "advection-diffusion-2D-bc%d"%(bc)
         self.Q = None
@@ -21,8 +21,9 @@ class AdvectionDiffusion2D:
         self.bc = bc
         self.AHnew = None
         self.Awnew = None
+        self.fitQ0 = False
         if par is None:
-            par = np.array([-1,-1,0.01,0.01,0.01,0.01,0,1],dtype="float64")
+            par = np.array([-1,-1,0.01,0.01,0.01,0.01,0,np.log(100)],dtype="float64")
             self.setPars(par)
         else:
             self.setQ(par = par)
@@ -46,12 +47,12 @@ class AdvectionDiffusion2D:
         assert kwargs.get("Q0") is not None or self.Q0 is not None
         self.Q0 = kwargs.get("Q0") if kwargs.get("Q0") is not None else self.Q0
         self.data = data
-        par = np.array([-1,-1,0.01,0.01,0.01,0.01,0,1],dtype="float64")
+        par = np.array([-1,-1,0.01,0.01,0.01,0.01,0,np.log(100)],dtype="float64")
         if self.data.ndim == 2:
             self.r = self.data.shape[1]
         else:
             self.r = 1
-        self.S = self.grid.getS()
+        self.S = self.grid.getS(idxs = kwargs.get("idx"))
         return(par)
 
     def setQ(self,par = None,S = None):

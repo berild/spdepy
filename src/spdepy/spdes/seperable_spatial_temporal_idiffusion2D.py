@@ -11,7 +11,7 @@ class SeperableSpatialTemporalIDiffusion2D:
     """
     def __init__(self,grid,par=None,bc = 3) -> None:
         self.grid = grid
-        self.type = "seprable-spatial-temporal-2D-bc%d"%(bc)
+        self.type = "seperable-spatial-temporal-2D-bc%d"%(bc)
         self.Q = None
         self.Q_fac = None
         self.data = None
@@ -20,7 +20,7 @@ class SeperableSpatialTemporalIDiffusion2D:
         self.bc = bc
         self.AHnew = None
         if par is None: 
-            par = np.hstack([[-1]*9,[-1]*9,0.1,1,1],dtype="float64")
+            par = np.hstack([[-1]*9,[-1]*9,0.1,1,np.log(100)],dtype="float64")
             self.setPars(par)
         else:
             self.setQ(par = par)
@@ -37,13 +37,13 @@ class SeperableSpatialTemporalIDiffusion2D:
 
     def initFit(self,data, **kwargs):
         assert data.shape[0] <= self.grid.n
-        par = np.hstack([[-1]*9,[-1]*9,0.1,1,1],dtype="float64")
+        par = np.hstack([[-1]*9,[-1]*9,0.1,1,np.log(100)],dtype="float64")
         self.data = data
         if self.data.ndim == 2:
             self.r = self.data.shape[1]
         else:
             self.r = 1
-        self.S = self.grid.getS()
+        self.S = self.grid.getS(idxs = kwargs.get("idx"))
         return(par)
 
 
@@ -58,7 +58,7 @@ class SeperableSpatialTemporalIDiffusion2D:
         self.S = self.grid.getS()
 
     def print(self,par):
-        return("| \u03BA = %2.2f"%(np.exp(par[0:9]).mean()) +  ", \u03B3 = %2.2f"%(np.exp(par[9:18]).mean()) + ", a = %2.2f"%(par[36]) + ", \u03C3	 = %2.2f"%(np.exp(par[37])) +  ", \u03C4 = %2.2f"%(np.exp(par[39])))
+        return("| \u03BA = %2.2f"%(np.exp(par[0:9]).mean()) +  ", \u03B3 = %2.2f"%(np.exp(par[9:18]).mean()) + ", a = %2.2f"%(par[18]) + ", \u03C3	 = %2.2f"%(np.exp(par[19])) +  ", \u03C4 = %2.2f"%(np.exp(par[20])))
 
     def makeQ(self, par, grad = True):
         # grid

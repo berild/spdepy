@@ -22,7 +22,7 @@ class AdvectionHaDiffusion2D:
         self.AHnew = None
         self.Awnew = None
         if par is None:
-            par = np.array([-1,-1,0.01,0.01,0.01,0.01,0,1],dtype="float64")
+            par = np.array([-1,-1,0.01,0.01,0.01,0.01,0,np.log(100)],dtype="float64")
             self.setPars(par)
         else:
             self.setQ(par = par)
@@ -55,13 +55,13 @@ class AdvectionHaDiffusion2D:
         assert data.shape[0] <= self.grid.n
         assert kwargs.get("Q0") is not None or self.Q0 is not None
         self.Q0 = kwargs.get("Q0") if kwargs.get("Q0") is not None else self.Q0
-        par = np.array([-1,-1,0.01,0.01,0.01,0.01,0,1],dtype="float64")
+        par = np.array([-1,-1,0.01,0.01,0.01,0.01,0,np.log(100)],dtype="float64")
         self.data = data
         if self.data.ndim == 2:
             self.r = self.data.shape[1]
         else:
             self.r = 1
-        self.S = self.grid.getS()
+        self.S = self.grid.getS(idxs = kwargs.get("idx"))
         return(par)
     
     def setQ(self,par = None,S = None):
@@ -69,8 +69,6 @@ class AdvectionHaDiffusion2D:
             par = self.getPars()
         else:
             self.setPars(par)
-        if S is not None:
-            self.S = S
         self.Q, self.Q_fac = self.makeQ(par = par, grad = False)
         self.S = self.grid.getS()
     

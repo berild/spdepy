@@ -21,7 +21,7 @@ class WhittleMaternAnisotropic2D:
         self.AHnew = None
         self.Awnew = None
         if par is None: 
-            par = np.hstack([-1,-1,0.1,0.1,0],dtype = "float64")
+            par = np.hstack([-1,-1,0.1,0.1,np.log(100)],dtype = "float64")
             self.setPars(par)
         else:
             self.setQ(par = par)
@@ -40,13 +40,13 @@ class WhittleMaternAnisotropic2D:
 
     def initFit(self,data, **kwargs):
         assert data.shape[0] <= self.grid.Ns
-        par = np.hstack([-1,-1,0.1,0.1,0],dtype = "float64")
+        par = np.hstack([-1,-1,0.1,0.1,np.log(100)],dtype = "float64")
         self.data = data
         if self.data.ndim == 2:
             self.r = self.data.shape[1]
         else:
             self.r = 1
-        self.S = self.grid.getS()
+        self.S = self.grid.getS(idxs = kwargs.get("idx"))
         return(par)
 
 
@@ -59,7 +59,6 @@ class WhittleMaternAnisotropic2D:
         self.S = self.grid.getS()
 
     def makeQ(self, par, grad = True):
-        assert self.Q0 is not None
         Ns = self.grid.Ns
         Dv = self.grid.Dv
         iDv = self.grid.iDv
@@ -144,7 +143,7 @@ class WhittleMaternAnisotropic2D:
     def Ah(self, Hs) -> sparse.csc_matrix:
         if self.AHnew is None:
             self.setClib()
-        M, N, T = self.grid.shape
+        M, N = self.grid.shape
         Hs = np.array(Hs,dtype = "float64")
         obj = self.AHnew(M, N, Hs, self.grid.hx, self.grid.hy)
         row = self.AHrow(obj)
@@ -162,7 +161,7 @@ class WhittleMaternAnisotropic2D:
     def setClib(self) -> None:
         tmp = os.path.dirname(__file__)
             
-        M, N, T = self.grid.shape
+        M, N = self.grid.shape
         
         if not os.path.exists(tmp + '/ccode/lib_AcH_2D_b%d.so'%(self.bc)):
             os.system('g++ -c -fPIC %s/ccode/AcH_2D_b%d.cpp -o %s/ccode/AcH_2D_b%d.o'%(tmp,self.bc,tmp,self.bc))

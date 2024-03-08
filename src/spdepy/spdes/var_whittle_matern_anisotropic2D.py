@@ -11,7 +11,7 @@ class VarWhittleMaternAnisotropic2D:
     """
     def __init__(self,grid,par=None,bc = 3) -> None:
         self.grid = grid
-        self.type = "whittle-matern-anisotropic-2D-bc%d"%(bc)
+        self.type = "var-whittle-matern-anisotropic-2D-bc%d"%(bc)
         self.Q = None
         self.Q_fac = None
         self.data = None
@@ -21,7 +21,7 @@ class VarWhittleMaternAnisotropic2D:
         self.AHnew = None
         self.Awnew = None
         if par is None: 
-            par = np.hstack([[-1]*9,[-1]*9, [0.1]*9, [0.1]*9,0],dtype = "float64")
+            par = np.hstack([[-1]*9,[-1]*9, [0.1]*9, [0.1]*9,np.log(100)],dtype = "float64")
             self.setPars(par)
         else:
             self.setQ(par = par)
@@ -41,13 +41,13 @@ class VarWhittleMaternAnisotropic2D:
     def initFit(self,data, **kwargs):
         #mod4: kappa(0:9), gamma(9:18), vx(18:27), vy(27:36), sigma(36)
         assert data.shape[0] <= self.grid.Ns
-        par = np.hstack([[-1]*9,[-1]*9, [0.1]*9, [0.1]*9,0],dtype = "float64")
+        par = np.hstack([[-1]*9,[-1]*9, [0.1]*9, [0.1]*9,np.log(100)],dtype = "float64")
         self.data = data
         if self.data.ndim == 2:
             self.r = self.data.shape[1]
         else:
             self.r = 1
-        self.S = self.grid.getS()
+        self.S = self.grid.getS(idxs = kwargs.get("idx"))
         return(par)
 
     def sample(self,n = 1,simple = False):
