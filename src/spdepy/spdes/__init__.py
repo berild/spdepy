@@ -11,6 +11,17 @@ def spde_init(model, grid, parameters = None, ani = True, ha = True, bc = 3, Q0 
                 else:
                     from .whittle_matern2D import WhittleMatern2D
                     return(WhittleMatern2D(par = parameters, grid = grid, bc = bc)) 
+        elif (model == "var-whittle-matern") or model == -1:
+            if ha:
+                from .var_whittle_matern_ha2D import VarWhittleMaternHa2D
+                return(VarWhittleMaternHa2D(par = parameters, grid = grid, bc = bc)) 
+            else:
+                if ani:
+                    from .var_whittle_matern_anisotropic2D import VarWhittleMaternAnisotropic2D
+                    return(VarWhittleMaternAnisotropic2D(par = parameters, grid = grid, bc = bc))
+                else:
+                    from .var_whittle_matern2D import VarWhittleMatern2D
+                    return(VarWhittleMatern2D(par = parameters, grid = grid, bc = bc)) 
         elif (model == "advection-diffusion") or model == 2:
             if ha:
                 from .advection_ha_diffusion2D import AdvectionHaDiffusion2D
