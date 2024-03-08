@@ -70,7 +70,7 @@ class Grid:
     def idx2pos(self,idx):
         pass
         
-    def getIdx(self,pos: np.ndarray):
+    def getIdx(self,pos: np.ndarray, extend = True):
         """getIdx find the index of a position in the grid
 
         Parameters
@@ -78,7 +78,10 @@ class Grid:
         pos : np.ndarray
             position in the grid (idx X, idx Y, idx T)
         """
-        return((pos[0]+self.Ne)+(pos[1]+self.Ne)*(self.M+2*self.Ne)+ pos[2]*self.Ns)
+        if extend:
+            return((pos[0]+self.Ne)+(pos[1]+self.Ne)*(self.M+2*self.Ne)+ pos[2]*self.Ns)
+        else:
+            return((pos[0])+ pos[1]*self.M + pos[2]*self.M*self.N)
     
     def n2e(self,idx):
         if self.n2eidx is None:
@@ -149,7 +152,7 @@ class Grid:
         self.iDv = sparse.eye(self.Ns)/self.V
             
 
-    def basis(self,dx = 0 , dy = 0, d = 2) -> (np.ndarray,np.ndarray):
+    def basis(self,dx = 0 , dy = 0, d = 2):
         if self.isExtended:
             tx = self.sxe+dx
             ty = self.sye+dy
