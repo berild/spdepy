@@ -69,14 +69,16 @@ class Model:
         self.setQ(par = res['x'])
         return(res)
 
-    def sample(self, n = 1, simple = False) -> np.ndarray:
+    def sample(self, n = 1, simple = False, seed = None) -> np.ndarray:
         #self.setModel(mu = self.mu,sigmas = self.sigmas, useCov = self.useCov)
+        if seed is None:
+            seed = np.random.randint(100)
         if not self.useCov:
-            z = np.random.normal(size = self.Q.shape[0]*n).reshape(self.Q.shape[0],n)
+            z = np.random.default_rng(seed).normal(size = self.Q.shape[0]*n).reshape(self.Q.shape[0],n)
             self.Q_fac = cholesky(self.Q)
             data = self.grid.getS()@(self.Q_fac.apply_Pt(self.Q_fac.solve_Lt(z,use_LDLt_decomposition=False))+self.mu[:,np.newaxis]) 
         else:
-            z = np.random.normal(size = self.Q.shape[0]*n).reshape(self.Q.shape[0],n)
+            z = np.random.default_rng(seed).normal(size = self.Q.shape[0]*n).reshape(self.Q.shape[0],n)
             self.Q_fac = cholesky(self.Q)
             data = self.grid.getS()@(self.Q_fac.apply_Pt(self.Q_fac.solve_Lt(z,use_LDLt_decomposition=False))+self.mu[:,np.newaxis]) 
         if not simple:
@@ -86,7 +88,7 @@ class Model:
     def qinv(self,simple = False):
         if simple:
             z = self.sample(n = 1000)
-            self.mvar = z.var(axis = 1)
+            mvar = z.var(axis = 1)
         else:
             if self.Q is None:
                 self.setModel()
@@ -102,7 +104,7 @@ class Model:
                 v = Q.data
                 tmpQinv =  np.array(robj.r.rqinv(robj.r["sparseMatrix"](i = robj.FloatVector(r+1),j = robj.FloatVector(c+1),x = robj.FloatVector(v))))
                 self.pQinv = sparse.csc_matrix((np.array(tmpQinv[:,2],dtype = "float32"), (np.array(tmpQinv[:,0],dtype="int32"), np.array(tmpQinv[:,1],dtype="int32"))), shape=tshape)
-                self.mvar = self.pQinv.diagonal()
+                mvar = self.pQinv.diagonal()
             else:
                 Q = (self.grid.getS()@self.Q@self.grid.getS().T).tocoo()
                 tshape = self.Q.shape
@@ -111,7 +113,8 @@ class Model:
                 v = Q.data
                 tmpQinv =  np.array(robj.r.rqinv(robj.r["sparseMatrix"](i = robj.FloatVector(r+1),j = robj.FloatVector(c+1),x = robj.FloatVector(v))))
                 self.pQinv = sparse.csc_matrix((np.array(tmpQinv[:,2],dtype = "float32"), (np.array(tmpQinv[:,0],dtype="int32"), np.array(tmpQinv[:,1],dtype="int32"))), shape=tshape)
-                self.mvar = self.pQinv.diagonal()
+                mvar = self.pQinv.diagonal()
+        return mvar
             
     def update(self, y, idx, tau = None):
         if tau is None:
