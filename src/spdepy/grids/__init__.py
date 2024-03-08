@@ -37,7 +37,7 @@ def grid(x,y,z= None, t = None,extend = None):
         else:
             from .spat2Dtemp_regular_mesh import Grid
             mesh = Grid()
-            mesh.setGrid(x=x,y=y,extend = extend)
+            mesh.setGrid(x=x,y=y,t=t,extend = extend)
             return(mesh)
     else:
         if t is None:
