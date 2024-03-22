@@ -7,11 +7,10 @@ from sksparse.cholmod import cholesky
 class Model:
     '''Docstring
     '''
-    def __init__(self, spde = None,grid= None, parameters = None,ani = True, ha = True, bc = 3, Q0 = None) -> None:
-        assert grid is not None
+    def __init__(self, spde = None,grid= None, parameters = None,ani = True, ha = True, bc = 3, mod0 = None) -> None:
         self.grid = grid
         if spde is not None:
-            self.model(spde = spde,grid = self.grid, parameters=parameters,ani = ani, ha = ha, bc = bc,Q0 = Q0)
+            self.model(spde = spde,grid = self.grid, parameters=parameters,ani = ani, ha = ha, bc = bc, mod0 = mod0)
         else:
             self.mod = None
         self.Q = None
@@ -23,7 +22,7 @@ class Model:
     def setQ(self,par = None) -> None:
         self.mod.setQ(par=par)
         
-    def model(self,spde=None,grid=None, parameters = None,ani = True, ha = True, bc = 3,Q0 = None) -> None:
+    def model(self,spde=None,grid=None, parameters = None,ani = True, ha = True, bc = 3,mod0 = None) -> None:
         """model _summary_
 
         Parameters
@@ -40,7 +39,9 @@ class Model:
             Boundary conditions, by default 3
         """
         assert spde is not None and grid is not None
-        self.mod = spde_init(model = spde, grid = grid, parameters = parameters,ani = ani, ha = ha, bc = bc, Q0 = Q0)
+        if grid.type == "gridST" and mod0 is None:
+            mod0 = spde_init(model = "whittle-matern", grid = grid, parameters = parameters,ani = ani, ha = ha, bc = bc)
+        self.mod = spde_init(model = spde, grid = grid, parameters = parameters,ani = ani, ha = ha, bc = bc, mod0 = mod0)
         self.spde_type = self.mod.type
         self.optim = Optimize(self.mod.logLike)
             
@@ -151,8 +152,8 @@ class Model:
             self.Q = self.mod.Q.copy().tocsc()
             self.tau = np.exp(self.mod.tau)
 
-    def getPars(self) -> np.ndarray:
-        return(self.mod.getPars())
+    def getPars(self,onlySelf = True) -> np.ndarray:
+        return(self.mod.getPars(onlySelf = onlySelf))
 
     def plot(self):
         value = 1
