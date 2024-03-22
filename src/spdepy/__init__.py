@@ -30,8 +30,9 @@ def model(**kwargs) -> Model:
         Use half angles diffusion, by default True if anisotropic diffusion is used
     anisotropic: bool, optional
         Use anisotropic diffusion, by default True. Unused if ha is True.
-    Q0: sparse.csc_matrix, optional
-        Default None. The precision matrix of initial field. Required to constructed the precision matrix of spatial temporal field. Can be given later.
+    mod0: sparse.csc_matrix, optional
+        Default None. The model for the initial field. A whittle-matern model that can have spatially varying parameters. Same spatial field as the model.
+        If None then defualt model is set.
     Returns
     -------
     Model: Object
@@ -41,6 +42,14 @@ def model(**kwargs) -> Model:
     ha = True if type(kwargs.get("ha")) is not bool else kwargs.get("ha")
     bc = 3 if type(kwargs.get("bc")) is not int else kwargs.get("bc")
     ani = True if type(kwargs.get("anisotropic")) is not bool else kwargs.get("anisotropic")
-    return(Model(spde = kwargs.get("spde"), grid = kwargs.get("grid"), parameters = kwargs.get("parameters"),ani = ani, ha = ha, bc = bc, Q0 = kwargs.get("Q0")))
+    mesh = kwargs.get("grid")
+    if mesh.type == "gridST" and kwargs.get("mod0") is None:
+        mesh0 = grid(x = mesh.x, y = mesh.y, extend = mesh.Ne)
+        mod0 = spde_init(model = "whittle-matern", grid = mesh0, ani = ani, ha = ha, bc = bc)
+    elif mesh.type == "gridST" and kwargs.get("mod0") is not None:
+        mod0 = kwargs.get("mod0").mod
+    else:
+        mod0 = None
+    return(Model(spde = kwargs.get("spde"), grid = kwargs.get("grid"), parameters = kwargs.get("parameters"),ani = ani, ha = ha, bc = bc, mod0 = mod0))
 
-# Requires Q0 for spatial tmep model
+# Requires mod0 for spatial tmep model
