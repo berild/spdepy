@@ -5,7 +5,7 @@ import os
 from sksparse.cholmod import cholesky
 
 class VarAdvectionVarIDiffusion2D:
-    def __init__(self,grid,par=None,bc = 3, Q0 = None) -> None:
+    def __init__(self,grid,mod0,par=None,bc = 3) -> None:
         self.grid = grid
         self.type = "var-advection-var-idiffusion-2D-bc%d"%(bc)
         self.Q = None
@@ -13,19 +13,23 @@ class VarAdvectionVarIDiffusion2D:
         self.data = None
         self.r = None
         self.S = None
-        self.Q0 = Q0
         self.bc = bc
+        self.mod0 = mod0
         self.AHnew = None
         self.Awnew = None
+        self.fitQ0 = True
         if par is None:
             par = np.hstack([[-1]*9,[-1]*9,[0.1]*18,0,np.log(100)],dtype="float64")
             self.setPars(par)
         else:
             self.setQ(par = par)
     
-    def getPars(self):
-        return(np.hstack([self.kappa,self.gamma,self.wx,self.wy,self.sigma,self.tau],dtype="float64"))
-    
+    def getPars(self,onlySelf = True)-> np.ndarray:
+        if onlySelf:
+            return(np.hstack([self.kappa,self.gamma,self.wx,self.wy,self.sigma,self.tau],dtype="float64"))
+        else: 
+            return(np.hstack([self.kappa,self.gamma,self.wx,self.wy,self.sigma,self.mod0.getPars()[:-1],self.tau],dtype="float64"))
+
     def setPars(self,par)-> None:
         par = np.array(par,dtype="float64")
         self.kappa = par[0:9]
@@ -33,13 +37,20 @@ class VarAdvectionVarIDiffusion2D:
         self.wx = par[18:27]
         self.wy = par[27:36]
         self.sigma = par[36]
-        self.tau = par[37]
+        if par.size > 38:
+            self.mod0.setPars(par[37:])
+        self.tau = par[-1]
         
     def initFit(self,data, **kwargs):
         assert data.shape[0] <= self.grid.n
-        assert kwargs.get("Q0") is not None or self.Q0 is not None
-        self.Q0 = kwargs.get("Q0") if kwargs.get("Q0") is not None else self.Q0
-        par = np.hstack([[-1]*9,[-1]*9,[0.1]*18,0,np.log(100)],dtype="float64")
+        if kwargs.get("fitQ0") is not None:
+            assert type(kwargs.get("fitQ0")) == bool
+            self.fitQ0 = kwargs.get("fitQ0")
+        if self.fitQ0:
+            x0 = self.mod0.getPars()[:-1]
+            par = np.hstack([[-1]*9,[-1]*9,[0.1]*18,0,x0,np.log(100)],dtype="float64")
+        else:
+            par = np.hstack([[-1]*9,[-1]*9,[0.1]*18,0,np.log(100)],dtype="float64")
         self.data = data
         if self.data.ndim == 2:
             self.r = self.data.shape[1]
@@ -55,14 +66,18 @@ class VarAdvectionVarIDiffusion2D:
             self.setPars(par)
         if S is not None:
             self.S = S
-        self.Q, self.Q_fac = self.makeQ(par = par, grad = False)
+        self.Q, self.Q_fac,_ = self.makeQ(par = par, grad = False)
         self.S = self.grid.getS()
     
     def print(self,par):
-        return("| \u03BA = %2.2f"%(np.exp(par[0:9]).mean()) +  ", \u03B3 = %2.2f"%(np.exp(par[9:18]).mean()) + ", wx = %2.2f"%(par[18:27].mean()) + ", wy = %2.2f"%(par[27:36].mean()) + ", \u03C3 = %2.2f"%(np.exp(par[36])) +  ", \u03C4 = %2.2f"%(np.exp(par[37])))
+        if par.size > 38:
+            s1 = "| \u03BA = %2.2f"%(np.exp(par[0:9]).mean()) +  ", \u03B3 = %2.2f"%(np.exp(par[9:18]).mean()) + ", wx = %2.2f"%(par[18:27].mean()) + ", wy = %2.2f"%(par[27:36].mean()) + ", \u03C3 = %2.2f"%(np.exp(par[36])) +  ", \u03C4 = %2.2f\n"%(np.exp(par[-1])) 
+            s1 += " Q0: " + self.mod0.print(par[37:])[:-10]
+            return s1
+        else:
+            return("| \u03BA = %2.2f"%(np.exp(par[0:9]).mean()) +  ", \u03B3 = %2.2f"%(np.exp(par[9:18]).mean()) + ", wx = %2.2f"%(par[18:27].mean()) + ", wy = %2.2f"%(par[27:36].mean()) + ", \u03C3 = %2.2f"%(np.exp(par[36])) +  ", \u03C4 = %2.2f"%(np.exp(par[37])))
 
     def makeQ(self, par, grad = True):
-        assert self.Q0 is not None
         #grid
         dt = self.grid.dt
         T = self.grid.T
@@ -80,8 +95,14 @@ class VarAdvectionVarIDiffusion2D:
         As = Dv@Dk
         Qs = As.transpose()@iDv@As
         A = Dv + (Dv@Dk - self.Ah(Hs) +  self.Aw(ws))*dt
+        if par.size > 38:
+            Q0, _, dQ0 = self.mod0.makeQ(par[37:],grad = grad)
+        else:
+            if self.mod0.Q is None:
+                self.mod0.setQ()
+            Q0 = self.mod0.Q
         # precision matrix Q
-        Q = sparse.bmat([[sigma*dt*self.Q0 + Qs, -Qs@iDv@A,sparse.csc_matrix((Ns,(T-2)*Ns))]])
+        Q = sparse.bmat([[sigma*dt*Q0 + Qs, -Qs@iDv@A,sparse.csc_matrix((Ns,(T-2)*Ns))]])
         for t in range(T-2):
             Q = sparse.bmat([[Q],[sparse.bmat([[sparse.csc_matrix((Ns,(t)*Ns)),-A.T@iDv@Qs, A.T@iDv@Qs@iDv@A + Qs, -Qs@iDv@A,sparse.csc_matrix((Ns,(T-3-t)*Ns))]])]])
         Q = sparse.bmat([[Q],[sparse.bmat([[sparse.csc_matrix((Ns,(T-2)*Ns)),-A.T@iDv@Qs, A.T@iDv@Qs@iDv@A]])]])
@@ -136,9 +157,16 @@ class VarAdvectionVarIDiffusion2D:
                 tdQ = sparse.bmat([[tdQ],[sparse.bmat([[sparse.csc_matrix((Ns,(t)*Ns)),-A.T@iDv@Qs, A.T@iDv@Qs@iDv@A + Qs, -Qs@iDv@A,sparse.csc_matrix((Ns,(T-3-t)*Ns))]])]])
             tdQ = sparse.bmat([[tdQ],[sparse.bmat([[sparse.csc_matrix((Ns,(T-2)*Ns)),-A.T@iDv@Qs, A.T@iDv@Qs@iDv@A]])]])
             dQ.append(-tdQ.tocsc()/(dt*sigma))
+            # Q0
+            if par.size > 38:
+                for j in range(len(dQ0)): 
+                    tdQ = sparse.bmat([[dQ0[j], sparse.csc_matrix((Ns,(T-1)*Ns))]])
+                    for t in range(T-1):
+                            tdQ = sparse.bmat([[tdQ],[sparse.csc_matrix((Ns,(T)*Ns))] ])
+                    dQ.append((tdQ).tocsc())
             return(Q,Q_fac,dQ)
         else:
-            return(Q,Q_fac)
+            return(Q,Q_fac,None)
                 
     def logLike(self, par, nh1 = 100, grad = True):
         if grad:
@@ -169,7 +197,7 @@ class VarAdvectionVarIDiffusion2D:
         else:
             data  = self.data
             tau = np.exp(par[-1])
-            Q, Q_fac = self.makeQ(par = par, grad = False)
+            Q, Q_fac,_ = self.makeQ(par = par, grad = False)
             Q_c = Q + self.S.T@self.S*tau
             Q_c_fac= cholesky(Q_c)
             if (Q_fac == -1) or (Q_c_fac == -1):

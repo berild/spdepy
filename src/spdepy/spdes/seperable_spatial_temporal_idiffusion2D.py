@@ -25,7 +25,7 @@ class SeperableSpatialTemporalIDiffusion2D:
         else:
             self.setQ(par = par)
     
-    def getPars(self) -> np.ndarray:
+    def getPars(self,*args, **kwargs) -> np.ndarray:
         return(np.hstack([self.kappa,self.gamma,self.a,self.sigma,self.tau],dtype = "float64"))
     
     def setPars(self,par) -> None:

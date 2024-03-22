@@ -22,7 +22,7 @@ class WhittleMaternHa2D:
         else:
             self.setQ(par = par)
     
-    def getPars(self) -> np.ndarray:
+    def getPars(self,*args, **kwargs) -> np.ndarray:
         return(np.hstack([self.kappa,self.gamma,self.vx,self.vy,self.tau],dtype="float64"))
     
     def setPars(self,par) -> None:
@@ -61,7 +61,7 @@ class WhittleMaternHa2D:
             par = self.getPars()
         else:
             self.setPars(par)
-        self.Q, self.Q_fac = self.makeQ(par = par, grad = False)
+        self.Q, self.Q_fac, _ = self.makeQ(par = par, grad = False)
         self.S = self.grid.getS()
 
     
@@ -107,7 +107,7 @@ class WhittleMaternHa2D:
             dQ.append(dA.T@iDv@A + A.T@iDv@dA)
             return(Q, Q_fac, dQ)
         else:
-            return(Q, Q_fac)
+            return(Q, Q_fac, None)
 
     def print(self,par):
         return("| \u03BA = %2.2f"%(np.exp(par[0])) +  ", \u03B3 = %2.2f"%(np.exp(par[1])) + ", vx = %2.2f"%(par[2]) + ", vy = %2.2f"%(par[3]) +  ",\u03C4 = %2.2f"%(np.exp(par[4])))
@@ -140,7 +140,7 @@ class WhittleMaternHa2D:
         else:
             data  = self.data
             tau = np.exp(par[-1])
-            Q, Q_fac = self.makeQ(par = par, grad = False)
+            Q, Q_fac,_ = self.makeQ(par = par, grad = False)
             Q_c = Q + self.S.T@self.S*tau
             Q_c_fac= cholesky(Q_c)
             mu_c = Q_c_fac.solve_A(self.S.T@data*tau)
