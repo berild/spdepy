@@ -12,7 +12,7 @@ def fit(bc):
      ### ANI
      mod0 = sp.model(grid = sp.grid(x=grid['x'], y=grid['y'], extend = 5),
           spde = 'whittle-matern', parameters = np.load('data/mod0pars.npy'),
-          ha = False, bc = bc, anisotropic = True)
+          ha = False, bc = bc, anisotropic = False)
      
      mod = sp.model(grid = sp.grid(x=grid['x'], y=grid['y'], t = grid['t'],extend = 5),
           spde = 'var-advection-var-diffusion', ha = False, bc = bc, anisotropic = True, mod0 = mod0)
