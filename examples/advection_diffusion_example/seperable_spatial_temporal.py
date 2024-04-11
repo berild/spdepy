@@ -12,7 +12,7 @@ def fit(bc):
     ### ANI
     mod = sp.model(grid = sp.grid(x=grid['x'], y=grid['y'], t = grid['t'],extend = 5),
          spde = 'seperable-spatial-temporal', ha = False, bc = bc, anisotropic = True)
-    x0 = np.hstack([[-1]*9,[-1]*9,[1]*9,[-1]*9,0.1,0,np.log(10)])
+    x0 = np.hstack([[-1]*9,[-1]*9,[1]*9,[-1]*9,0.1,0,np.log(1000)])
     mod.fit(data = data,verbose = True,lr = lr,idx = idx, fix = [-1], x0 = x0,
             end = "./fits/seperable_spatial_temporal_ani_bc%d"%bc)
     x0 = mod.getPars(onlySelf=False)            

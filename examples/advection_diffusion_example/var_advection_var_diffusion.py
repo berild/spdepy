@@ -17,7 +17,7 @@ def fit(bc):
      mod = sp.model(grid = sp.grid(x=grid['x'], y=grid['y'], t = grid['t'],extend = 5),
           spde = 'var-advection-var-diffusion', ha = False, bc = bc, anisotropic = True, mod0 = mod0)
      
-     x0 = np.hstack([[ -1 ]*9,[ -1 ]*9,[ 1 ]*9,[ -1 ]*9,[ 1 ]*9,[ -1 ]*9,-1,np.load('data/mod0pars.npy')[:-1],np.log(10)])
+     x0 = np.hstack([[ -1 ]*9,[ -1 ]*9,[ 1 ]*9,[ -1 ]*9,[ 1 ]*9,[ -1 ]*9,-1,np.load('data/mod0pars.npy')[:-1],np.log(1000)])
 
      mod.fit(data = data,verbose = True,lr = lr,idx = idx, x0 = x0, fix = [-1],
                end = "./fits/var_advection_var_diffusion_ani_bc%d"%bc)
