@@ -56,9 +56,11 @@ def get_sinmod_validation():
     t = np.arange(0,T*10.0,T)
     data = np.array(nc['salinity'][:,0,ydom,xdom]).swapaxes(0,2).swapaxes(0,1).reshape(x.shape[0]*y.shape[0],-1)
     mut = []
+    muTot = []
     mutS = []
     for i in range(0,data.shape[1]-15,15):
         mut.append(data[:,i:(i+T)].T.reshape(-1))
+        muTot.append(data[:,i:(i+T)].mean(axis=1))
         mutS.append(data[:,i:(i+T)])
         
     ffile = 'SINMOD_29_05_21.nc'
@@ -66,6 +68,7 @@ def get_sinmod_validation():
     data = np.array(nc['salinity'][:,0,ydom,xdom]).swapaxes(0,2).swapaxes(0,1).reshape(x.shape[0]*y.shape[0],-1)
     for i in range(0,data.shape[1]-15,15):
         mut.append(data[:,i:(i+T)].T.reshape(-1))
+        muTot.append(data[:,i:(i+T)].mean(axis=1))
         mutS.append(data[:,i:(i+T)])
         
     ffile = 'SINMOD_04_05_22.nc'
@@ -73,6 +76,7 @@ def get_sinmod_validation():
     data = np.array(nc['salinity'][:,0,ydom,xdom]).swapaxes(0,2).swapaxes(0,1).reshape(x.shape[0]*y.shape[0],-1)
     for i in range(0,data.shape[1]-15,15):
         mut.append(data[:,i:(i+T)].T.reshape(-1))
+        muTot.append(data[:,i:(i+T)].mean(axis=1))
         mutS.append(data[:,i:(i+T)])
         
     ffile = 'SINMOD_10_05_22.nc'
@@ -80,6 +84,7 @@ def get_sinmod_validation():
     data = np.array(nc['salinity'][:,0,ydom,xdom]).swapaxes(0,2).swapaxes(0,1).reshape(x.shape[0]*y.shape[0],-1)
     for i in range(0,data.shape[1]-15,15):
         mut.append(data[:,i:(i+T)].T.reshape(-1))
+        muTot.append(data[:,i:(i+T)].mean(axis=1))
         mutS.append(data[:,i:(i+T)])
         
     ffile = 'SINMOD_11_05_22.nc'
@@ -87,6 +92,7 @@ def get_sinmod_validation():
     data = np.array(nc['salinity'][:,0,ydom,xdom]).swapaxes(0,2).swapaxes(0,1).reshape(x.shape[0]*y.shape[0],-1)
     for i in range(0,data.shape[1]-15,15):
         mut.append(data[:,i:(i+T)].T.reshape(-1))
+        muTot.append(data[:,i:(i+T)].mean(axis=1))
         mutS.append(data[:,i:(i+T)])
         
     ffile = 'SINMOD_21_06_22.nc'
@@ -94,6 +100,7 @@ def get_sinmod_validation():
     data = np.array(nc['salinity'][:,0,ydom,xdom]).swapaxes(0,2).swapaxes(0,1).reshape(x.shape[0]*y.shape[0],-1)
     for i in range(0,data.shape[1]-15,15):
         mut.append(data[:,i:(i+T)].T.reshape(-1))
+        muTot.append(data[:,i:(i+T)].mean(axis=1))
         mutS.append(data[:,i:(i+T)])
         
     ffile = 'SINMOD_22_06_22.nc'
@@ -101,6 +108,7 @@ def get_sinmod_validation():
     data = np.array(nc['salinity'][:,0,ydom,xdom]).swapaxes(0,2).swapaxes(0,1).reshape(x.shape[0]*y.shape[0],-1)
     for i in range(0,data.shape[1]-15,15):
         mut.append(data[:,i:(i+T)].T.reshape(-1))
+        muTot.append(data[:,i:(i+T)].mean(axis=1))
         mutS.append(data[:,i:(i+T)])
         
     ffile = 'SINMOD_08_09_22.nc'
@@ -108,6 +116,7 @@ def get_sinmod_validation():
     data = np.array(nc['salinity'][:,0,ydom,xdom]).swapaxes(0,2).swapaxes(0,1).reshape(x.shape[0]*y.shape[0],-1)
     for i in range(0,data.shape[1]-15,15):
         mut.append(data[:,i:(i+T)].T.reshape(-1))
+        muTot.append(data[:,i:(i+T)].mean(axis=1))
         mutS.append(data[:,i:(i+T)])
         
     ffile = 'SINMOD_09_09_22.nc'
@@ -115,10 +124,12 @@ def get_sinmod_validation():
     data = np.array(nc['salinity'][:,0,ydom,xdom]).swapaxes(0,2).swapaxes(0,1).reshape(x.shape[0]*y.shape[0],-1)
     for i in range(0,data.shape[1]-15,15):
         mut.append(data[:,i:(i+T)].T.reshape(-1))
+        muTot.append(data[:,i:(i+T)].mean(axis=1))
         mutS.append(data[:,i:(i+T)])
         
     mut = np.array(mut).T
     mutS = np.stack(mutS,axis = 2)
+    muTot = np.array(muTot)
     rng = np.random.default_rng(seed=1234)
     mut = mut + rng.normal(size = mut.shape)*np.sqrt(1/100)
     mutS = mutS + rng.normal(size = mutS.shape)*np.sqrt(1/100)
@@ -129,7 +140,7 @@ def get_sinmod_validation():
     idx = iS + jS*x.shape[0] + tS*x.shape[0]*y.shape[0]
     
     tag = "sinmod_validation"
-    return({'dataS':mutS, 'data':mut,'idxS': idxS, 'idx': idx,'tS': tS,'tag':tag})
+    return({'dataS':mutS, 'data':mut,'idxS': idxS, 'idx': idx,'tS': tS,'tag':tag, 'mean': muTot})
 
 def get_sinmod_test():
     circ = 40075000

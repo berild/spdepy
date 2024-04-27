@@ -3,6 +3,8 @@
 
 class AH
 {
+    // Construction of diffusion matrix of the solution of 2D Advection-Diffsion equation
+    // Dirichiet boundary conditions with value equal zero one the boundaries
     public:
         AH(int numX, int numY, const double (*H)[4][2][2],double hx,double hy);
         int* Row();

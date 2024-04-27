@@ -25,7 +25,7 @@ def model(**kwargs) -> Model:
     parameters: np.ndarray, optional
         The parameter vector of all models. Must include the total number of parameters for the model.
     bc: int, optional
-        Default 3. Boundary condition. 1: Dirichlet 0, 2: Periodic, 3: Neumann 0
+        Default 3. Boundary condition. 1: Neumann 0, 2: Periodic (wrapping), 3: Dirichlet 0
     ha: bool, optional
         Use half angles diffusion, by default True if anisotropic diffusion is used
     anisotropic: bool, optional

@@ -6,7 +6,7 @@
 class Aw
 {
     // Construction of advection matrix of the solution of 2D Advection-Diffsion equation
-    // Dirichlet boundary conditions with derivative equal zero one the boundaries
+    // Dirichlet boundary conditions with value equal to zero one the boundaries
     public:
         Aw(int numX, int numY, const double (*G)[4],double hx,double hy, int diff, const double (*dG)[4]);
         int* Row();

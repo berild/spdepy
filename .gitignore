@@ -147,3 +147,11 @@ old
 #data
 *.nc
 *.csv
+figures
+**pred*
+
+# figures and videos
+*.png
+*.jpg
+*.mp4
+*.html
