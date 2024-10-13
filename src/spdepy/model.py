@@ -88,7 +88,7 @@ class Model:
     
     def qinv(self,simple = False):
         if simple:
-            z = self.sample(n = 1000)
+            z = self.sample(n = 1000, simple= True)
             mvar = z.var(axis = 1)
         else:
             if self.Q is None:
@@ -155,6 +155,9 @@ class Model:
     def getPars(self,onlySelf = True) -> np.ndarray:
         return(self.mod.getPars(onlySelf = onlySelf))
 
+    def simulate(self):
+        pass 
+        
     def plot(self):
         value = 1
         self.grid.plot(value)

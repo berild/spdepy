@@ -18,10 +18,11 @@ class VarWhittleMatern2D:
         self.r = None
         self.S = None
         self.bc = bc
+        self.Np = grid.Nbs2
         self.AHnew = None
         self.Awnew = None
         if par is None: 
-            par = np.hstack([[-1]*9,[-1]*9,np.log(100)],dtype = "float64")
+            par = np.hstack([[-1]*self.Np,[-1]*self.Np,np.log(100)],dtype = "float64")
             self.setPars(par)
         else:
             self.setQ(par = par)
@@ -30,15 +31,14 @@ class VarWhittleMatern2D:
         return(np.hstack([self.kappa,self.gamma,self.tau],dtype = "float64"))
     
     def setPars(self,par) -> None:
-        self.kappa = par[0:9]
-        self.gamma = par[9:18]
-        self.tau = par[18]
+        self.kappa = par[:self.Np]
+        self.gamma = par[self.Np:self.Np*2]
+        self.tau = par[-1]
         self.sigma = np.log(np.sqrt(1/np.exp(self.tau)))
 
     def initFit(self,data, **kwargs):
-        #mod4: kappa(0:9), gamma(9:18), sigma(18)
         assert data.shape[0] <= self.grid.Ns
-        par = np.hstack([[-1]*9,[-1]*9,np.log(100)],dtype = "float64")
+        par = np.hstack([[-1]*self.Np,[-1]*self.Np,np.log(100)],dtype = "float64")
         self.data = data
         if self.data.ndim == 2:
             self.r = self.data.shape[1]
@@ -79,7 +79,7 @@ class VarWhittleMatern2D:
             H = (np.eye(2)*(np.stack([pg,pg],axis=2))[:,:,:,np.newaxis])
             return(H)
         else:
-            dpar = np.zeros(9)
+            dpar = np.zeros(self.Np)
             dpar[d] = 1
             
             pg = np.exp(self.grid.evalBH(par = gamma))
@@ -87,19 +87,18 @@ class VarWhittleMatern2D:
             return(H_gamma)
         
     def print(self,par):
-        return("| \u03BA = %2.2f"%(np.exp(par[0:9]).mean()) +  ", \u03B3 = %2.2f"%(np.exp(par[9:18]).mean())  +  ",\u03C4 = %2.2f"%(np.exp(par[18])))
+        return("| \u03BA = %2.2f"%(np.exp(par[:self.Np]).mean()) +  ", \u03B3 = %2.2f"%(np.exp(par[self.Np:self.Np*2]).mean())  +  ",\u03C4 = %2.2f"%(np.exp(par[-1])))
     
     def logLike(self, par, nh1 = 100,grad = True):
-        #mod4: kappa(0:9), gamma(9:18), sigma(18)
         data  = self.data
-        Hs = self.getH(gamma = par[9:18]) 
-        lkappa = self.grid.evalB(par = par[0:9])
+        Hs = self.getH(gamma = par[self.Np:self.Np*2]) 
+        lkappa = self.grid.evalB(par = par[:self.Np])
         Dk =  sparse.diags(np.exp(lkappa)) 
         Dv = self.grid.Dv
         iDv = self.grid.iDv
         A_mat = Dv@Dk - self.Ah(Hs)
         Q = A_mat.transpose()@iDv@A_mat
-        Q_c = Q + self.S.transpose()@self.S*np.exp(par[18])
+        Q_c = Q + self.S.transpose()@self.S*np.exp(par[-1])
         Q_fac = cholesky(Q)
         Q_c_fac= cholesky(Q_c)
         if (Q_fac == -1) or (Q_c_fac == -1):
@@ -107,30 +106,30 @@ class VarWhittleMatern2D:
                 return((self.like,self.jac))
             else:
                 return(self.like)
-        mu_c = Q_c_fac.solve_A(self.S.transpose()@data*np.exp(par[18]))
+        mu_c = Q_c_fac.solve_A(self.S.transpose()@data*np.exp(par[-1]))
         if self.r == 1:
             data = data.reshape(-1,1)
             mu_c = mu_c.reshape(-1,1)
-        like = 1/2*Q_fac.logdet()*self.r + self.S.shape[0]*self.r*par[18]/2 - 1/2*Q_c_fac.logdet()*self.r - 1/2*(mu_c*(Q@mu_c)).sum() - np.exp(par[18])/2*((data-self.S@mu_c)**2).sum()
+        like = 1/2*Q_fac.logdet()*self.r + self.S.shape[0]*self.r*par[-1]/2 - 1/2*Q_c_fac.logdet()*self.r - 1/2*(mu_c*(Q@mu_c)).sum() - np.exp(par[-1])/2*((data-self.S@mu_c)**2).sum()
         if grad:
             vtmp = (2*np.random.randint(1,3,self.grid.Ns*nh1)-3).reshape(self.grid.Ns,nh1)
             TrQ = Q_fac.solve_A(vtmp)
             TrQc = Q_c_fac.solve_A(vtmp)
-            g_par = np.zeros(19)
+            g_par = np.zeros(self.Np*2 + 1)
             
-            g_par[18] = self.S.shape[0]*self.r/2 - 1/2*(TrQc*(self.S.transpose()@self.S*np.exp(par[18])@vtmp)).sum()*self.r/nh1 - np.exp(par[18])/2*((data - self.S@mu_c)**2).sum()
+            g_par[-1] = self.S.shape[0]*self.r/2 - 1/2*(TrQc*(self.S.transpose()@self.S*np.exp(par[-1])@vtmp)).sum()*self.r/nh1 - np.exp(par[-1])/2*((data - self.S@mu_c)**2).sum()
 
-            for i in range(9):
+            for i in range(self.Np):
                 A_par = Dv@sparse.diags(self.grid.bs[:,i]*np.exp(lkappa))
                 Q_par = A_par.transpose()@iDv@A_mat + A_mat.transpose()@iDv@A_par
                 dQmu_c = Q_par@mu_c
                 g_par[i] =  1/2*((TrQ - TrQc)*(Q_par@vtmp)).sum()*self.r/nh1 - 1/2*(mu_c*(dQmu_c)).sum()
 
-                dH = self.getH(gamma = par[9:18], d=i,grad=True) 
+                dH = self.getH(gamma = par[self.Np:self.Np*2], d=i,grad=True) 
                 A_par = - self.Ah(dH)
                 Q_par = A_par.transpose()@iDv@A_mat +  A_mat.transpose()@iDv@A_par
                 dQmu_c = Q_par@mu_c
-                g_par[9 + i] = 1/2*((TrQ - TrQc)*(Q_par@vtmp)).sum()*self.r/nh1 - 1/2*(mu_c*(dQmu_c)).sum()
+                g_par[self.Np + i] = 1/2*((TrQ - TrQc)*(Q_par@vtmp)).sum()*self.r/nh1 - 1/2*(mu_c*(dQmu_c)).sum()
             jac =  -g_par/(self.S.shape[0]*self.r)
         like =  -like/(self.S.shape[0]*self.r)
         if grad: 

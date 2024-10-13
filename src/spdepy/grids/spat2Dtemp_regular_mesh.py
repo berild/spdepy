@@ -116,7 +116,7 @@ class Grid:
         self.basisN()
         self.basisH()
             
-    def setGrid(self, x = None, y = None, t = None, extend = None) -> None:
+    def setGrid(self, x = None, y = None, t = None, extend = None, Nbs = 3) -> None:
         self.x = self.x if x is None else x
         self.y = self.y if y is None else y
         self.t = self.t if t is None else t
@@ -137,6 +137,8 @@ class Grid:
         self.ix = self.ix.flatten()
         self.iy = self.iy.flatten()
         self.it = self.it.flatten()
+        self.Nbs = Nbs
+        self.Nbs2 = Nbs**2
         self.basisN()
         self.basisH()
         self.basisA()
@@ -169,8 +171,9 @@ class Grid:
             xmax = self.sx.max()
             ymin = self.sy.min()
             ymax = self.sy.max()
-        kx = np.linspace(xmin - 2*(xmax-xmin)/3, xmax + 2*(xmax-xmin)/3,8)
-        ky = np.linspace(ymin - 2*(ymax-ymin)/3, ymax + 2*(ymax-ymin)/3,8)
+
+        kx = np.linspace(xmin - 2*(xmax-xmin)/self.Nbs, xmax + 2*(xmax-xmin)/self.Nbs,self.Nbs + 5)
+        ky = np.linspace(ymin - 2*(ymax-ymin)/self.Nbs, ymax + 2*(ymax-ymin)/self.Nbs,self.Nbs + 5)
         Bx = list([np.stack([((tx >= kx[i])&(tx < kx[i+1]) | ((tx >= kx[i])&(tx <= kx[i+1])&(i==(kx.size-2))))*1.0 for i in range(kx.size-1)],axis=1)])
         By = list([np.stack([((ty >= ky[i])&(ty < ky[i+1]) | ((ty >= ky[i])&(ty <= ky[i+1])&(i==(ky.size-2))))*1.0 for i in range(ky.size-1)],axis=1)])
         for r in range(1,d+1):
@@ -179,31 +182,31 @@ class Grid:
             for i in range(kx.size-r-1):
                 Bx[r][:,i] = (tx - kx[i])/(kx[i+r]-kx[i])*Bx[r-1][:,i] + (kx[i+r+1] - tx)/(kx[i+r+1]-kx[i+1])*Bx[r-1][:,i+1]
                 By[r][:,i] = (ty - ky[i])/(ky[i+r]-ky[i])*By[r-1][:,i] + (ky[i+r+1] - ty)/(ky[i+r+1]-ky[i+1])*By[r-1][:,i+1]
-        bx = np.stack([Bx[2][:,0] + Bx[2][:,1],Bx[2][:,2],Bx[2][:,3] + Bx[2][:,4]],axis = 1)
-        by = np.stack([By[2][:,0] + By[2][:,1],By[2][:,2],By[2][:,3] + By[2][:,4]],axis = 1)
+        bx = np.hstack([(Bx[2][:,0] + Bx[2][:,1]).reshape(-1,1), Bx[2][:,2:-2], (Bx[2][:,-2] + Bx[2][:,-1]).reshape(-1,1)])
+        by = np.hstack([(By[2][:,0] + By[2][:,1]).reshape(-1,1), By[2][:,2:-2], (By[2][:,-2] + By[2][:,-1]).reshape(-1,1)])
         return(bx,by)
 
     def basisN(self) -> None:
         bx, by = self.basis()
         if self.isExtended:
-            bs = np.zeros((self.sxe.shape[0],3*3))
+            bs = np.zeros((self.sxe.shape[0],self.Nbs*self.Nbs))
         else:
-            bs = np.zeros((self.sx.shape[0],3*3))
-        for i in range(3):
-            for j in range(3):
-                    bs[:,i*3+j] = bx[:,j]*by[:,i]
+            bs = np.zeros((self.sx.shape[0],self.Nbs*self.Nbs))
+        for i in range(self.Nbs):
+            for j in range(self.Nbs):
+                    bs[:,i*self.Nbs+j] = bx[:,j]*by[:,i]
         self.bs = bs
 
 
     def basisH(self) -> None:
         if self.isExtended:
-            bxA = np.zeros((self.sye.shape[0],4,3))
-            byA = np.zeros((self.sye.shape[0],4,3))
-            bs = np.zeros((self.sxe.shape[0],4,3*3))
+            bxA = np.zeros((self.sye.shape[0],4,self.Nbs))
+            byA = np.zeros((self.sye.shape[0],4,self.Nbs))
+            bs = np.zeros((self.sxe.shape[0],4,self.Nbs*self.Nbs))
         else:
-            bxA = np.zeros((self.sx.shape[0],4,3))
-            byA = np.zeros((self.sy.shape[0],4,3))
-            bs = np.zeros((self.sx.shape[0],4,3*3))
+            bxA = np.zeros((self.sx.shape[0],4,self.Nbs))
+            byA = np.zeros((self.sy.shape[0],4,self.Nbs))
+            bs = np.zeros((self.sx.shape[0],4,self.Nbs*self.Nbs))
         for i in range(4):
             if (i == 0):
                 bx,by = self.basis(dx=-1/2*self.hx)
@@ -215,20 +218,20 @@ class Grid:
                 bx,by = self.basis(dy=1/2*self.hy)
             bxA[:,i,:] = bx
             byA[:,i,:] = by
-        for i in range(3):
-            for j in range(3):
-                    bs[:,:,i*3+j] = bxA[:,:,j]*byA[:,:,i]
+        for i in range(self.Nbs):
+            for j in range(self.Nbs):
+                    bs[:,:,i*self.Nbs+j] = bxA[:,:,j]*byA[:,:,i]
         self.bsH = bs
         
     def basisA(self) -> None:
         if self.isExtended:
-            bxA = np.zeros((self.sye.shape[0],4,3))
-            byA = np.zeros((self.sye.shape[0],4,3))
-            bs = np.zeros((self.sxe.shape[0],4,3*3))
+            bxA = np.zeros((self.sye.shape[0],4,self.Nbs))
+            byA = np.zeros((self.sye.shape[0],4,self.Nbs))
+            bs = np.zeros((self.sxe.shape[0],4,self.Nbs*self.Nbs))
         else:
-            bxA = np.zeros((self.sx.shape[0],4,3))
-            byA = np.zeros((self.sy.shape[0],4,3))
-            bs = np.zeros((self.sx.shape[0],4,3*3))
+            bxA = np.zeros((self.sx.shape[0],4,self.Nbs))
+            byA = np.zeros((self.sy.shape[0],4,self.Nbs))
+            bs = np.zeros((self.sx.shape[0],4,self.Nbs*self.Nbs))
         for i in range(4):
             if (i == 2):
                 bx,by = self.basis(dx=-1/2*self.hx)
@@ -240,9 +243,9 @@ class Grid:
                 bx,by = self.basis(dy=1/2*self.hy)
             bxA[:,i,:] = bx
             byA[:,i,:] = by
-        for i in range(3):
-            for j in range(3):
-                    bs[:,:,i*3+j] = bxA[:,:,j]*byA[:,:,i]
+        for i in range(self.Nbs):
+            for j in range(self.Nbs):
+                    bs[:,:,i*self.Nbs+j] = bxA[:,:,j]*byA[:,:,i]
         self.bsA = bs
 
     def evalB(self,par,bs = None, d=None) -> np.ndarray:
@@ -267,7 +270,7 @@ class Grid:
             par[d] = 1
         if bs is None:
             bs = self.bsA
-        res = np.stack([bs[:,0,:]@par[:9],bs[:,1,:]@par[9:],bs[:,2,:]@par[:9],bs[:,3,:]@par[9:]],axis = 1)
+        res = np.stack([bs[:,0,:]@par[:self.Nbs**2],bs[:,1,:]@par[self.Nbs**2:],bs[:,2,:]@par[:self.Nbs**2],bs[:,3,:]@par[self.Nbs**2:]],axis = 1)
         res = self.advBound(res)
         return(res)
     

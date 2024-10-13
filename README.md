@@ -1,16 +1,31 @@
 # 📦 spdepy
 
-A package to model GRF through SPDE
+---
+This is the official implementation of the paper
+* Non-stationary Spatio-Temporal Modeling Using the Stochastic Advection-Diffusion
+Equation
 
-## Installation
+The examples presented in the paper are given in the [`examples`](https://github.com/berild/spdepy/tree/master/examples).
 
-```bash
+---
+
+Code to construct Gaussian random fields (GRFs) in space and time through stochastic partial differential equations (SPDEs).
+
+
+<!-- ## Installation -->
+<!-- ```bash
 $ pip install spdepy
-```
+``` -->
 
 ## Usage
 
 - TODO
+
+## Datasets
+
+There are a couple of data used in the paper. They can be found at
+[`DOI 10.17605/OSF.IO/NA3FQ`](https://osf.io/na3fq/). 
+To reproduce the examples in the paper put these datasets in the `/src/spdepy/data/` folder.
 
 ## Contributing
 

@@ -26,6 +26,7 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+.vscode/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -143,15 +144,48 @@ dmypy.json
 
 #folders
 old
+**.old
 
 #data
 *.nc
 *.csv
 figures
 **pred*
+*.npz
 
 # figures and videos
 *.png
 *.jpg
 *.mp4
-*.html
+
+*.html./examples/sinmod_example/fits.old/pred_seperable-spatial-temporal-ani-2D-bc1.npy
+./examples/sinmod_example/fits.old/pred-seperable-spatial-temporal-ani-2D-bc3.npy
+./examples/sinmod_example/fits.old/pred_var-advection-var-diffusion-2D-bc1.npy
+./examples/sinmod_example/fits.old/pred-advection-diffusion-2D-bc3.npy
+./examples/sinmod_example/fits.old/pred-var-advection-var-diffusion-2D-bc3.npy
+./examples/sinmod_example/fits/pred_seperable-spatial-temporal-ani-2D-bc1.npy
+./examples/sinmod_example/fits/pred_var-advection-var-diffusion-2D-bc1.npy
+./examples/results/temporal/seperable-spatial-temporal-2D-bc1.npy
+./examples/results/temporal/advection-diffusion-2D-bc1.npy
+./examples/results/temporal/seperable-spatial-temporal-ani-2D-bc1.npy
+./examples/results/temporal/var-advection-var-diffusion-2D-bc1.npy
+./examples/results/spatial/advection-diffusion-2D-bc1.npy
+./examples/results/spatial/seperable-spatial-temporal-ani-2D-bc1.npy
+./examples/results/spatial/seprable-spatial-temporal-2D-bc1.npy
+./examples/results/spatial/var-advection-var-diffusion-2D-bc1.npy
+./.git/objects/0d/7fe3625681736c434c5c11a9b9fbf671b517d7
+./.git/objects/9b/517009b9ca265f3121171c9e9de37da84f112e
+./.git/objects/5f/97821b6eac06fac14542af517cdb2d4d05f5e6
+./.git/objects/pack/tmp_pack_pJKiv3
+./.git/objects/37/a9ad36540fd07ba86c731685da7590364193f6
+./src/spdepy/data/SINMOD_26_05_21.nc
+./src/spdepy/data/SINMOD_27_05_21.nc
+./src/spdepy/data/SINMOD_22_06_22.nc
+./src/spdepy/data/SINMOD_09_09_22.nc
+./src/spdepy/data/SINMOD_08_09_22.nc
+./src/spdepy/data/SINMOD_11_05_22.nc
+./src/spdepy/data/SINMOD_10_05_22.nc
+./src/spdepy/data/SINMOD_04_05_22.nc
+./src/spdepy/data/SINMOD_21_06_22.nc
+./src/spdepy/data/SINMOD_28_05_21.nc
+./src/spdepy/data/SINMOD_29_05_21.nc

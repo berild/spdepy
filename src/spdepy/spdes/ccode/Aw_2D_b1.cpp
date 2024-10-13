@@ -6,7 +6,7 @@ class Aw
     // Construction of advection matrix of the solution of 2D Advection-Diffsion equation
     // Neumann boundary conditions with derivative equal zero one the boundaries
     public:
-        Aw(int numX, int numY, const double (*G)[4],double hx,double hy, int diff, const double (*dG)[4]);
+        Aw(int numX, int numY, double (*G)[4],double hx,double hy, int diff, double (*dG)[4]);
         int* Row();
         int* Col();
         double* Val();
@@ -16,7 +16,7 @@ class Aw
         ~Aw(); // deconstructor
 };
 // constuctor 
-Aw::Aw(int numX, int numY, const double (*G)[4],double hx,double hy, int diff, const double (*dG)[4])
+Aw::Aw(int numX, int numY, double (*G)[4],double hx,double hy, int diff, double (*dG)[4])
 {
     int idx = 0;
     row = new int [numX*numY*5];
@@ -44,6 +44,38 @@ Aw::Aw(int numX, int numY, const double (*G)[4],double hx,double hy, int diff, c
             }
 
             row[idx] = k;
+            if (k == int(j*numX + i_p)){
+                // val[idx] += val[idx + 1];
+                G[k][0] = 0.0;
+                dG[k][0] = 0.0;
+                row[idx + 1] = int(numX*numY);
+            }else{
+                row[idx + 1] = k;
+            }
+            if (k == int(j*numX + i_n)){
+                // val[idx] += val[idx + 2];
+                G[k][2] = 0.0;
+                dG[k][2] = 0.0;
+                row[idx + 2] = int(numX*numY);
+            }else{
+                row[idx + 2] = k;
+            }
+            if (k == int(j_p*numX + i)){
+                // val[idx] += val[idx + 3];
+                G[k][1] = 0.0;
+                dG[k][1] = 0.0;
+                row[idx + 3] = int(numX*numY);
+            }else{
+                row[idx + 3] = k;
+            }
+            if (k == int(j_n*numX + i)){
+                // val[idx] += val[idx + 4];
+                G[k][3] = 0.0;
+                dG[k][3] = 0.0;
+                row[idx + 4] = int(numX*numY);
+            }else{
+                row[idx + 4] = k;
+            }
 
             if (diff == 1){
                 val[idx] = (G[k][0]/fabs(G[k][0])*dG[k][0] + dG[k][0] + G[k][2]/fabs(G[k][2])*dG[k][2] - dG[k][2])*hy/2;
@@ -65,30 +97,6 @@ Aw::Aw(int numX, int numY, const double (*G)[4],double hx,double hy, int diff, c
                 val[idx + 4] = -(fabs(G[k][3])+G[k][3])*hx/2;
             }
 
-            if (k == int(j*numX + i_p)){
-                val[idx] += val[idx + 1];
-                row[idx + 1] = int(numX*numY);
-            }else{
-                row[idx + 1] = k;
-            }
-            if (k == int(j*numX + i_n)){
-                val[idx] += val[idx + 2];
-                row[idx + 2] = int(numX*numY);
-            }else{
-                row[idx + 2] = k;
-            }
-            if (k == int(j_p*numX + i)){
-                val[idx] += val[idx + 3];
-                row[idx + 3] = int(numX*numY);
-            }else{
-                row[idx + 3] = k;
-            }
-            if (k == int(j_n*numX + i)){
-                val[idx] += val[idx + 4];
-                row[idx + 4] = int(numX*numY);
-            }else{
-                row[idx + 4] = k;
-            }
             
             col[idx] = k;
             col[idx + 1] = int(j*numX + i_p);
@@ -127,7 +135,7 @@ double* Aw::Val()
 // Define C functions for the C++ class - as ctypes can only talk to C...
 extern "C"
 {
-    Aw* Aw_new(int numX, int numY, const double (*G)[4],double hx,double hy, int diff, const double (*dG)[4]){
+    Aw* Aw_new(int numX, int numY, double (*G)[4],double hx,double hy, int diff, double (*dG)[4]){
         return new Aw(numX, numY, G,hx,hy, diff, dG);}
     int* Aw_Row(Aw* aw) {return aw->Row();}
     int* Aw_Col(Aw* aw) {return aw->Col();}

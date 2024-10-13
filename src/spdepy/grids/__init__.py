@@ -1,6 +1,6 @@
 
 
-def grid(x,y,z= None, t = None,extend = None):
+def grid(x,y,z= None, t = None,extend = None, Nbs = 3):
     """Constructor for Grid class. 
     Supported domains are Spatial 2D, Spatial 3D or Spatio-temporal 2D are supported.
     These classes also constructs the basis spline functions for the spatially varying parameters within the SPDE.
@@ -32,12 +32,12 @@ def grid(x,y,z= None, t = None,extend = None):
         if t is None:
             from .spatial2D_regular_mesh import Grid
             mesh = Grid()
-            mesh.setGrid(x=x,y=y,extend = extend)
+            mesh.setGrid(x=x,y=y,extend = extend, Nbs = Nbs)
             return(mesh)
         else:
             from .spat2Dtemp_regular_mesh import Grid
             mesh = Grid()
-            mesh.setGrid(x=x,y=y,t=t,extend = extend)
+            mesh.setGrid(x=x,y=y,t=t,extend = extend, Nbs = Nbs)
             return(mesh)
     else:
         if t is None:

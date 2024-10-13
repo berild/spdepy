@@ -4,9 +4,9 @@
 class AH
 {
     // Construction of diffusion matrix of the solution of 2D Advection-Diffsion equation
-    // Neumman boundary conditions with derivative equal zero one the boundaries
+    // Zero-flux boundary conditions (Neumann) 
     public:
-        AH(int numX, int numY, const double (*H)[4][2][2],double hx,double hy);
+        AH(int numX, int numY, double (*H)[4][2][2],double hx,double hy);
         int* Row();
         int* Col();
         double* Val();
@@ -16,7 +16,7 @@ class AH
         ~AH(); // deconstructor
 };
 // constuctor 
-AH::AH(int numX, int numY, const double (*H)[4][2][2],double hx,double hy)
+AH::AH(int numX, int numY, double (*H)[4][2][2],double hx,double hy)
 {
     int idx = 0;
     row = new int [numX*numY*9];
@@ -33,13 +33,21 @@ AH::AH(int numX, int numY, const double (*H)[4][2][2],double hx,double hy)
 
             if ( i == 0 ) {
                 i_n = i;
+                H[k][0][0][0] = 0.0;
+                H[k][0][1][0] = 0.0;
             }else if ( i == (numX - 1) ){
                 i_p = i;
+                H[k][1][0][0] = 0.0;
+                H[k][1][1][0] = 0.0;
             }
             if ( j == 0 ){
                 j_n = j;
+                H[k][2][1][1] = 0.0;
+                H[k][2][0][1] = 0.0;
             }else if ( j == (numY - 1) ){
                 j_p = j;
+                H[k][3][1][1] = 0.0;
+                H[k][3][0][1] = 0.0;
             }
             k = int(j*numX + i);
 
@@ -94,14 +102,6 @@ AH::AH(int numX, int numY, const double (*H)[4][2][2],double hx,double hy)
 
 
             row[idx] = k;
-            // row[idx+1] = k;
-            // row[idx+2] = k;
-            // row[idx+3] = k;
-            // row[idx+4] = k;
-            // row[idx+5] = k;
-            // row[idx+6] = k;
-            // row[idx+7] = k;
-            // row[idx+8] = k;
             
             col[idx] = k;
             col[idx + 1] = int(j*numX + i_p);
@@ -122,7 +122,6 @@ AH::AH(int numX, int numY, const double (*H)[4][2][2],double hx,double hy)
             val[idx + 6] = 1.0/4.0*(H[k][2][0][1] + H[k][0][1][0]);
             val[idx + 7] = -1.0/4.0*(H[k][3][0][1] + H[k][0][1][0]);
             val[idx + 8] = -1.0/4.0*(H[k][2][0][1] + H[k][1][1][0]);
-
             idx += 9;
         }
     }
@@ -154,7 +153,7 @@ double* AH::Val()
 // Define C functions for the C++ class - as ctypes can only talk to C...
 extern "C"
 {
-    AH* AH_new(int numX, int numY, const double (*H)[4][2][2],double hx,double hy){
+    AH* AH_new(int numX, int numY, double (*H)[4][2][2],double hx,double hy){
         return new AH(numX, numY, H,hx,hy);}
     int* AH_Row(AH* ah) {return ah->Row();}
     int* AH_Col(AH* ah) {return ah->Col();}

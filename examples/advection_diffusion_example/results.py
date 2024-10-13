@@ -8,8 +8,8 @@ from scipy.stats import norm
 
 def getTempRes(mod):
     mod.setModel()
-    idx = np.load('data/idx.npy')
-    data = np.load('data/test.npy')
+    idx = np.load('data/test/idx.npy')
+    data = np.load('data/test/test.npy')
     res = np.zeros((data.shape[1],mod.grid.T))
     res2 = np.zeros((data.shape[1],mod.grid.T))
     n = np.zeros((data.shape[1],mod.grid.T))
@@ -22,14 +22,14 @@ def getTempRes(mod):
             uidx[tidx] = True
             uidx[idx] = False
             mod.update(y = data[uidx,i] ,idx = nidx[uidx])
-            tmp = np.sqrt((mod.grid.getS()@mod.mu - data[:,i])**2).reshape(mod.grid.T, -1)
+            tmp = ((mod.grid.getS()@mod.mu - data[:,i])**2).reshape(mod.grid.T, -1)
             mvar = mod.qinv(simple = True)
             z = (data[:,i] - mod.grid.getS()@mod.mu)/np.sqrt(mvar)
             tmp2 = (np.sqrt(mvar) * (z*(2*norm.cdf(z)-1) + 2*norm.pdf(z) - np.sqrt(1/np.pi))).reshape(mod.grid.T, -1)
             res[i,:(mod.grid.T - t)] += [tmp[t+j,~uidx.reshape(mod.grid.T,-1)[t+j,:]].mean() for j in range(mod.grid.T - t)]
             res2[i,:(mod.grid.T - t)] += [tmp2[t+j,~uidx.reshape(mod.grid.T,-1)[t+j,:]].mean() for j in range(mod.grid.T - t)]
             n[i,:(mod.grid.T-t)] += 1
-    return (res/n,res2/n)
+    return (np.sqrt(res/n),res2/n)
 
 
 def findRes(model,bc):
@@ -37,7 +37,7 @@ def findRes(model,bc):
     mod0 = sp.model(grid = sp.grid(x=grid['x'], y=grid['y'], extend = 5),
             spde = 'whittle-matern', parameters = np.load('data/mod0pars.npy'),
             ha = False, bc = bc, anisotropic = False)
-    file = "data/temporal_res4.npz"
+    file = "data/test/temporal_res5.npz"
     if model == 0:
         parT = np.load('data/modpars.npy')
         mod = sp.model(grid = sp.grid(x=grid['x'], y=grid['y'], t = grid['t'],extend = 5),

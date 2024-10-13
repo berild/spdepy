@@ -7,7 +7,7 @@ from sksparse.cholmod import cholesky
 class SeperableSpatialTemporal2D:
     """ Whittle Matern _summary_
     
-    Parameters = log kappa^2, log gamma, vx, vy, a, log tau_omega, log tau
+    Parameters = log kappa^2, log gamma, vx, vy, log rho, log tau
     """
     def __init__(self,grid,par=None,bc = 3) -> None:
         self.grid = grid
@@ -20,13 +20,13 @@ class SeperableSpatialTemporal2D:
         self.bc = bc
         self.AHnew = None
         if par is None: 
-            par = np.hstack([[-1]*9,[-1]*9, [0.1]*9, [0.1]*9,0.1,1,np.log(100)],dtype = "float64")
+            par = np.hstack([[-1]*9,[-1]*9, [0.1]*9, [0.1]*9,-1,np.log(100)],dtype = "float64")
             self.setPars(par)
         else:
             self.setQ(par = par)
     
     def getPars(self,*args, **kwargs) -> np.ndarray:
-        return(np.hstack([self.kappa,self.gamma,self.vx,self.vy,self.a, self.sigma,self.tau],dtype = "float64"))
+        return(np.hstack([self.kappa,self.gamma,self.vx,self.vy,self.rho, self.tau],dtype = "float64"))
     
     def setPars(self,par) -> None:
         par = np.array(par,dtype="float64")
@@ -34,13 +34,12 @@ class SeperableSpatialTemporal2D:
         self.gamma = par[9:18]
         self.vx = par[18:27]
         self.vy = par[27:36]
-        self.a = par[36]
-        self.sigma = par[37]
-        self.tau = par[38]
+        self.rho = par[36]
+        self.tau = par[37]
 
     def initFit(self,data, **kwargs):
         assert data.shape[0] <= self.grid.n
-        par = np.hstack([[-1]*9,[-1]*9, [0.1]*9, [0.1]*9,0.1,1,np.log(100)],dtype = "float64")
+        par = np.hstack([[-1]*9,[-1]*9, [0.1]*9, [0.1]*9,-1,np.log(100)],dtype = "float64")
         self.data = data
         if self.data.ndim == 2:
             self.r = self.data.shape[1]
@@ -60,7 +59,7 @@ class SeperableSpatialTemporal2D:
         self.S = self.grid.getS()
     
     def print(self,par):
-        return("| \u03BA = %2.2f"%(np.exp(par[0:9]).mean()) +  ", \u03B3 = %2.2f"%(np.exp(par[9:18]).mean()) + ", vx = %2.2f"%((par[18:27]).mean()) + ", vy = %2.2f"%((par[27:36]).mean()) + ", a = %2.2f"%(par[36]) + ", \u03C3 = %2.2f"%(np.exp(par[37])) +  ", \u03C4 = %2.2f"%(np.exp(par[38])))
+        return("| \u03BA = %2.2f"%(np.exp(par[0:9]).mean()) +  ", \u03B3 = %2.2f"%(np.exp(par[9:18]).mean()) + ", vx = %2.2f"%((par[18:27]).mean()) + ", vy = %2.2f"%((par[27:36]).mean()) + ", \u03C1 = %2.2f"%(np.exp(par[36])) +  ", \u03C4 = %2.2f"%(np.exp(par[37])))
 
     def makeQ(self, par, grad = True):
         # grid
@@ -73,14 +72,13 @@ class SeperableSpatialTemporal2D:
         vx = self.grid.evalBH(par[18:27])
         vy = self.grid.evalBH(par[27:36])
         vv = np.stack([vx,vy],axis = 2)
-        apar = par[36]
-        sigma = np.exp(par[37])
+        rho = np.exp(par[36])
         # components
         Hs = (np.eye(2)*(np.stack([gamma,gamma],axis=2))[:,:,:,np.newaxis]) + vv[:,:,:,np.newaxis]*vv[:,:,np.newaxis,:]
         Dk =  sparse.diags(kappa).tocsc()
         As = Dv@Dk - self.Ah(Hs)
         Qs = As.T@iDv@As
-        Qt = self.makeQt(apar,sigma, T = T)
+        Qt = self.makeQt(rho, T = T)
         # precision matrix Q
         Q = sparse.kron(Qt,Qs).tocsc()
         Q_fac = cholesky(Q)
@@ -117,10 +115,8 @@ class SeperableSpatialTemporal2D:
                 dQs = dAs.T@iDv@As + As.T@iDv@dAs
                 dQ.append(sparse.kron(Qt,dQs).tocsc())
             # a 
-            dQt = self.makeQt(apar,sigma, T = T, diff = 1)
+            dQt = self.makeQt(rho,T = T, diff = 1)
             dQ.append(sparse.kron(dQt,Qs).tocsc())
-            # sigma
-            dQ.append(Q)
             return(Q,Q_fac,dQ)
         else:
             return(Q,Q_fac)
@@ -187,29 +183,30 @@ class SeperableSpatialTemporal2D:
         self.AHdel(obj)
         return(res)
     
-    def makeQt(self,a,sigma, T = 10, diff = 0) -> sparse.csc_matrix:
+    def makeQt(self,rho,T = 10, diff = 0) -> sparse.csc_matrix:
         res = np.zeros((T,T))
         if diff == 1:
+            # this is the derivative with respect to log rho
             for i in range(T):
                 if i == 0 or i == T-1:
-                    res[i,i] = 0
+                    res[i,i] = 2*rho**2/(1-rho**2)**2
                 else:
-                    res[i,i] = 2*a*sigma
+                    res[i,i] = 4*rho**2/(1-rho**2)**2
                 if i > 0:
-                    res[i,i-1] = -sigma
+                    res[i,i-1] = -rho*(1+rho**2)/(1-rho**2)**2
                 if i < T-1:
-                    res[i,i+1] = -sigma
+                    res[i,i+1] = -rho*(1+rho**2)/(1-rho**2)**2
             return(sparse.csc_matrix(res))
         else:
             for i in range(T):
                 if i == 0 or i == T-1:
-                    res[i,i] = sigma
+                    res[i,i] = 1/(1-rho**2)
                 else:
-                    res[i,i] = (1+a**2)*sigma
+                    res[i,i] = (1+rho**2)/(1-rho**2)
                 if i > 0:
-                    res[i,i-1] = -a*sigma
+                    res[i,i-1] = -rho/(1-rho**2)
                 if i < T-1:
-                    res[i,i+1] = -a*sigma
+                    res[i,i+1] = -rho/(1-rho**2)
             return(sparse.csc_matrix(res))
 
         

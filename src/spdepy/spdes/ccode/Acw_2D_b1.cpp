@@ -31,20 +31,6 @@ Aw::Aw(int numX, int numY, double G[2],double hx,double hy,int diff)
             int j_n = j - 1;
             int j_p = j + 1;
 
-            k = int(j*numX + i);
-
-            if ( i == 0 ) {
-                i_n = i;
-            }else if ( i == (numX - 1) ){
-                i_p = i;
-            }
-            if ( j == 0 ){
-                j_n = j;
-            }else if ( j == (numY - 1) ){
-                j_p = j;
-            }
-
-            row[idx] = k;
 
             if (diff == 1){
                 val[idx] = G[0]/fabs(G[0])*hy;
@@ -66,29 +52,31 @@ Aw::Aw(int numX, int numY, double G[2],double hx,double hy,int diff)
                 val[idx + 4] = - (fabs(G[1]) + G[1])*hx/2;
             }
 
-            if (k == int(j*numX + i_p)){
-                val[idx] += val[idx + 1];
-                row[idx + 1] = int(numX*numY);
-            }else{
-                row[idx + 1] = k;
-            }
-            if (k == int(j*numX + i_n)){
-                val[idx] += val[idx + 2];
+            k = int(j*numX + i);
+
+            row[idx] = k;
+            row[idx + 1] = k;
+            row[idx + 2] = k;
+            row[idx + 3] = k;
+            row[idx + 4] = k;
+
+            if ( i == 0 ) {
+                i_n = i;
+                val[idx] -= fabs(G[0])*hy/2;
                 row[idx + 2] = int(numX*numY);
-            }else{
-                row[idx + 2] = k;
+            }else if ( i == (numX - 1) ){
+                i_p = i;
+                val[idx] -= fabs(G[0])*hy/2;
+                row[idx + 1] = int(numX*numY);
             }
-            if (k == int(j_p*numX + i)){
-                val[idx] += val[idx + 3];
-                row[idx + 3] = int(numX*numY);
-            }else{
-                row[idx + 3] = k;
-            }
-            if (k == int(j_n*numX + i)){
-                val[idx] += val[idx + 4];
+            if ( j == 0 ){
+                j_n = j;
+                val[idx] -= fabs(G[1])*hx/2;
                 row[idx + 4] = int(numX*numY);
-            }else{
-                row[idx + 4] = k;
+            }else if ( j == (numY - 1) ){
+                j_p = j;
+                val[idx] -= fabs(G[1])*hx/2;
+                row[idx + 3] = int(numX*numY);
             }
 
             col[idx] = k;
@@ -146,3 +134,30 @@ extern "C"
 //g++ -c -fPIC Awb1.cpp -o Awb1.o
 //g++ -shared -W1,libAwb1.so -o libAwb1.so Awb1.o
 //g++ -shared -o libAwb1.so Awb1.o
+
+
+
+
+
+            // if (k == int(j*numX + i_p)){
+            //     // val[idx] += val[idx + 1];
+            // }else{
+            // }
+            // if (k == int(j*numX + i_n)){
+            //     // val[idx] += val[idx + 2];
+            // }else{
+            // }
+            // if (k == int(j_p*numX + i)){
+            //     // val[idx] += val[idx + 3];
+            //     val[idx] -= fabs(G[1])*hx/2;
+            //     row[idx + 3] = int(numX*numY);
+            // }else{
+            //     row[idx + 3] = k;
+            // }
+            // if (k == int(j_n*numX + i)){
+            //     // val[idx] += val[idx + 4];
+            //     val[idx] -= fabs(G[1])*hx/2;
+            //     row[idx + 4] = int(numX*numY);
+            // }else{
+            //     row[idx + 4] = k;
+            // }

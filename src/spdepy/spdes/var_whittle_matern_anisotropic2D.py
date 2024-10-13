@@ -18,10 +18,11 @@ class VarWhittleMaternAnisotropic2D:
         self.r = None
         self.S = None
         self.bc = bc
+        self.Np = grid.Nbs2
         self.AHnew = None
         self.Awnew = None
         if par is None: 
-            par = np.hstack([[-1]*9,[-1]*9, [0.1]*9, [0.1]*9,np.log(100)],dtype = "float64")
+            par = np.hstack([[-1]*self.Np,[-1]*self.Np, [0.1]*self.Np, [0.1]*self.Np,np.log(100)],dtype = "float64")
             self.setPars(par)
         else:
             self.setQ(par = par)
@@ -31,15 +32,15 @@ class VarWhittleMaternAnisotropic2D:
     
     def setPars(self,par) -> None:
         par = np.array(par,dtype="float64")
-        self.kappa = par[0:9]
-        self.gamma = par[9:18]
-        self.vx = par[18:27]
-        self.vy = par[27:36]
-        self.tau = par[36]
+        self.kappa = par[:self.Np]
+        self.gamma = par[self.Np:self.Np*2]
+        self.vx = par[self.Np*2:self.Np*3]
+        self.vy = par[self.Np*3:self.Np*4]
+        self.tau = par[-1]
         self.sigma = np.log(np.sqrt(1/np.exp(self.tau)))
 
     def initFit(self,data, **kwargs):
-        par = np.hstack([[-1]*9,[-1]*9, [0.1]*9, [0.1]*9,np.log(100)],dtype = "float64")
+        par = np.hstack([[-1]*self.Np,[-1]*self.Np, [0.1]*self.Np, [0.1]*self.Np,np.log(100)],dtype = "float64")
         self.data = data
         if self.data.ndim == 2:
             self.r = self.data.shape[1]
@@ -67,10 +68,10 @@ class VarWhittleMaternAnisotropic2D:
         Dv = self.grid.Dv
         iDv = self.grid.iDv
         # parameters
-        kappa = np.exp(self.grid.evalB(par = par[0:9]))
-        gamma = np.exp(self.grid.evalBH(par = par[9:18]))
-        vx = self.grid.evalBH(par[18:27])
-        vy = self.grid.evalBH(par[27:36])
+        kappa = np.exp(self.grid.evalB(par = par[:self.Np]))
+        gamma = np.exp(self.grid.evalBH(par = par[self.Np:self.Np*2]))
+        vx = self.grid.evalBH(par[self.Np*2:self.Np*3])
+        vy = self.grid.evalBH(par[self.Np*3:self.Np*4])
         vv = np.stack([vx,vy],axis=2)
         # components
         Hs = (np.eye(2)*(np.stack([gamma,gamma],axis=2))[:,:,:,np.newaxis]) + vv[:,:,:,np.newaxis]*vv[:,:,np.newaxis,:]
@@ -83,27 +84,27 @@ class VarWhittleMaternAnisotropic2D:
         # gradient
         if grad: 
             dQ = []
-            for i in range(9):
+            for i in range(self.Np):
                 dA = Dv@sparse.diags(self.grid.bs[:,i]*kappa)
                 dQ.append((dA.transpose()@iDv@A +  A.transpose()@iDv@dA).tocsc())
             # log gamma
-            for i in range(9):
+            for i in range(self.Np):
                 dHs = np.eye(2)*(np.stack([self.grid.bsH[:,:,i]*gamma,self.grid.bsH[:,:,i]*gamma],axis=2)[:,:,:,np.newaxis])
                 dA = - self.Ah(dHs)
                 dQ.append((dA.transpose()@iDv@A +  A.transpose()@iDv@dA).tocsc())
             # vx
-            for i in range(9):
-                dpar = np.zeros(9)
+            for i in range(self.Np):
+                dpar = np.zeros(self.Np)
                 dpar[i] = 1
-                dv = np.stack([self.grid.evalBH(par = dpar),self.grid.evalBH(par = np.zeros(9))],axis = 2)
+                dv = np.stack([self.grid.evalBH(par = dpar),self.grid.evalBH(par = np.zeros(self.Np))],axis = 2)
                 dHs = vv[:,:,:,np.newaxis]*dv[:,:,np.newaxis,:]  + dv[:,:,:,np.newaxis]*vv[:,:,np.newaxis,:]
                 dA = - self.Ah(dHs)
                 dQ.append((dA.transpose()@iDv@A +  A.transpose()@iDv@dA).tocsc())
             # vy
-            for i in range(9):
-                dpar = np.zeros(9)
+            for i in range(self.Np):
+                dpar = np.zeros(self.Np)
                 dpar[i] = 1
-                dv = np.stack([self.grid.evalBH(par = np.zeros(9)),self.grid.evalBH(par = dpar)],axis = 2)
+                dv = np.stack([self.grid.evalBH(par = np.zeros(self.Np)),self.grid.evalBH(par = dpar)],axis = 2)
                 dHs = vv[:,:,:,np.newaxis]*dv[:,:,np.newaxis,:]  + dv[:,:,:,np.newaxis]*vv[:,:,np.newaxis,:] 
                 dA = - self.Ah(dHs)
                 dQ.append((dA.transpose()@iDv@A +  A.transpose()@iDv@dA).tocsc())
@@ -111,33 +112,8 @@ class VarWhittleMaternAnisotropic2D:
         else:
             return(Q,Q_fac,None)
         
-    # def getH(self,gamma=None,vx = None,vy = None,d=None,grad = False):
-    #     if vx is None and vy is None and gamma is None:
-    #         gamma = self.gamma
-    #         vx = self.vx
-    #         vy = self.vy
-    #     if not grad:
-    #         pg = np.exp(self.grid.evalBH(par = gamma))
-    #         vv = np.stack([self.grid.evalBH(par = vx),self.grid.evalBH(par = vy)],axis=2)
-    #         H = (np.eye(2)*(np.stack([pg,pg],axis=2))[:,:,:,np.newaxis]) + vv[:,:,:,np.newaxis]*vv[:,:,np.newaxis,:]
-    #         return(H)
-    #     else:
-    #         dpar = np.zeros(9)
-    #         dpar[d] = 1
-
-    #         vv = np.stack([self.grid.evalBH(par = vx),self.grid.evalBH(par = vy)],axis=2)
-    #         pg = np.exp(self.grid.evalBH(par = gamma))
-    #         H_gamma = np.eye(2)*(np.stack([self.grid.bsH[:,:,d]*pg,self.grid.bsH[:,:,d]*pg],axis=2)[:,:,:,np.newaxis])
-
-    #         dv = np.stack([self.grid.evalBH(par = dpar),self.grid.evalBH(par = np.zeros(9))],axis = 2)
-    #         H_vx = vv[:,:,:,np.newaxis]*dv[:,:,np.newaxis,:]  + dv[:,:,:,np.newaxis]*vv[:,:,np.newaxis,:]
-
-    #         dv = np.stack([self.grid.evalBH(par = np.zeros(9)),self.grid.evalBH(par = dpar)],axis = 2)
-    #         H_vy = vv[:,:,:,np.newaxis]*dv[:,:,np.newaxis,:]  + dv[:,:,:,np.newaxis]*vv[:,:,np.newaxis,:] 
-    #         return((H_gamma,H_vx,H_vy))
-
     def print(self,par):
-        return("| \u03BA = %2.2f"%(np.exp(par[0:9]).mean()) +  ", \u03B3 = %2.2f"%(np.exp(par[9:18]).mean()) + ", vx = %2.2f"%(par[18:27].mean()) + ", vy = %2.2f"%(par[27:36].mean()) +  ",\u03C4 = %2.2f"%(np.exp(par[36])))
+        return("| \u03BA = %2.2f"%(np.exp(par[:self.Np]).mean()) +  ", \u03B3 = %2.2f"%(np.exp(par[self.Np:self.Np*2]).mean()) + ", vx = %2.2f"%(par[self.Np*2:self.Np*3].mean()) + ", vy = %2.2f"%(par[self.Np*3:self.Np*4].mean()) +  ",\u03C4 = %2.2f"%(np.exp(par[-1])))
     
     def logLike(self, par, nh1 = 100, grad = True):
         if grad:
@@ -177,56 +153,6 @@ class VarWhittleMaternAnisotropic2D:
             like =  -like/(self.S.shape[0]*self.r)
             return(like)
 
-    # def logLike(self, par, nh1 = 100,grad = True):
-    #     #mod4: kappa(0:9), gamma(9:18), vx(18:27), vy(27:36), sigma(36)
-    #     data  = self.data
-    #     Hs = self.getH(gamma = par[9:18],vx = par[18:27], vy = par[27:36]) 
-    #     lkappa = self.grid.evalB(par = par[0:9])
-    #     Dk =  sparse.diags(np.exp(lkappa)) 
-    #     Dv = self.grid.Dv
-    #     iDv = self.grid.iDv
-    #     A_mat = Dv@Dk - self.Ah(Hs)
-    #     Q = A_mat.transpose()@iDv@A_mat
-    #     Q_c = Q + self.S.transpose()@self.S*np.exp(par[36])
-    #     Q_fac = cholesky(Q)
-    #     Q_c_fac= cholesky(Q_c)
-    #     if (Q_fac == -1) or (Q_c_fac == -1):
-    #         if grad:
-    #             return((self.like,self.jac))
-    #         else:
-    #             return(self.like)
-    #     mu_c = Q_c_fac.solve_A(self.S.transpose()@data*np.exp(par[36]))
-    #     if self.r == 1:
-    #         data = data.reshape(-1,1)
-    #         mu_c = mu_c.reshape(-1,1)
-    #     like = 1/2*Q_fac.logdet()*self.r + self.S.shape[0]*self.r*par[36]/2 - 1/2*Q_c_fac.logdet()*self.r - 1/2*(mu_c*(Q@mu_c)).sum() - np.exp(par[36])/2*((data-self.S@mu_c)**2).sum()
-    #     if grad:
-    #         vtmp = (2*np.random.randint(1,3,self.grid.Ns*nh1)-3).reshape(self.grid.Ns,nh1)
-    #         TrQ = Q_fac.solve_A(vtmp)
-    #         TrQc = Q_c_fac.solve_A(vtmp)
-    #         g_par = np.zeros(37)
-            
-    #         g_par[36] = self.S.shape[0]*self.r/2 - 1/2*(TrQc*(self.S.transpose()@self.S*np.exp(par[36])@vtmp)).sum()*self.r/nh1 - np.exp(par[36])/2*((data - self.S@mu_c)**2).sum()
-
-    #         for i in range(9):
-    #             A_par = Dv@sparse.diags(self.grid.bs[:,i]*np.exp(lkappa))
-    #             Q_par = A_par.transpose()@iDv@A_mat + A_mat.transpose()@iDv@A_par
-    #             dQmu_c = Q_par@mu_c
-    #             g_par[i] =  1/2*((TrQ - TrQc)*(Q_par@vtmp)).sum()*self.r/nh1 - 1/2*(mu_c*(dQmu_c)).sum()
-
-    #             dH = self.getH(gamma = par[9:18],vx = par[18:27],vy = par[27:36], d=i,grad=True) 
-    #             for j in range(3):
-    #                 A_par = - self.Ah(dH[j])
-    #                 Q_par = A_par.transpose()@iDv@A_mat +  A_mat.transpose()@iDv@A_par
-    #                 dQmu_c = Q_par@mu_c
-    #                 g_par[9*(j+1) + i] = 1/2*((TrQ - TrQc)*(Q_par@vtmp)).sum()*self.r/nh1 - 1/2*(mu_c*(dQmu_c)).sum()
-    #         jac =  -g_par/(self.S.shape[0]*self.r)
-    #     like =  -like/(self.S.shape[0]*self.r)
-    #     if grad: 
-    #         return((like,jac))
-    #     else:
-    #         return(like)
-    
     def Ah(self,Hs) -> sparse.csc_matrix:
         if self.AHnew is None:
             self.setClib()

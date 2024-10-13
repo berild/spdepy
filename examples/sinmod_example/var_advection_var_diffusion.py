@@ -23,27 +23,71 @@ def fit(bc):
 #     mod.fit(data = data['mut'],verbose = True,lr = lr2,
 #             end = "../fits/var_advection_var_diffusion_ha_bc%d"%bc, x0 = x0)
     # 
-    ### ANI
-    p0 = np.load('./fits/var_advection_var_diffusion_ani_bc%d_usable.npy'%bc)
-    # x00 = np.hstack([[-1]*9,[-1]*9,[1]*9,[-1]*9,np.log(100)])
+    ### ANI 1.6213
+    # p0 = np.load('./fits/var_advection_var_diffusion_ani_bc%d.npy'%bc)
+    # # x00 = np.hstack([[-1]*Nbs2,[-1]*Nbs2,[1]*Nbs2,[-1]*Nbs2,np.log(100)])
+    # # x00 = np.hstack([[p0[-5]]*9,[p0[-4]]*9,[p0[-3]]*9,[p0[-2]]*9,np.log(100)])
+    # mod0 = sp.model(grid = sp.grid(x=data['x'], y=data['y'], extend = 5),
+    #     spde = 'var-whittle-matern',#  parameters = x00,
+    #     ha = False, bc = bc, anisotropic = True)
+        
+    # mod = sp.model(grid = sp.grid(x=data['x'], y=data['y'], t = data['t'],extend = 5),
+    #     spde = 'var-advection-var-diffusion', ha = False, bc = bc, anisotropic = True, mod0 = mod0)
+    # # x0 = np.hstack([[-1]*Nbs2,[-1]*Nbs2,[1]*Nbs2,[-1]*Nbs2,[1]*Nbs2,[1]*Nbs2,0.1,x00[:-1],np.log(100)])
+    # # x0 = np.hstack([p0[:-5],x00[:-1],np.log(100)])
+
+    # mod.fit(data = data['mut'],verbose = True,lr = lr,
+    #         end = "./fits/var_advection_var_diffusion_ani_bc%d"%bc, x0 = p0, fix = [-1])
+
+    # x0 = mod.getPars(onlySelf=False)
+
+    # mod.fit(data = data['mut'],verbose = True,lr = lr2,
+    #         end = "./fits/var_advection_var_diffusion_ani_bc%d"%bc, x0 = x0)
+    
+
+    ### ANI bs5 1.6344
+    # p0 = np.load('./fits/var_advection_var_diffusion_ani_bs5_bc%d.npy'%bc)
+    # Nbs =  5 
+    # Nbs2 = Nbs**2
+    # # x00 = np.hstack([[-1]*Nbs2,[-1]*Nbs2,[1]*Nbs2,[-1]*Nbs2,np.log(100)])
+    # # x00 = np.hstack([[p0[-5]]*9,[p0[-4]]*9,[p0[-3]]*9,[p0[-2]]*9,np.log(100)])
+    # mod0 = sp.model(grid = sp.grid(x=data['x'], y=data['y'], extend = 5, Nbs = Nbs),
+    #     spde = 'var-whittle-matern',#  parameters = x00,
+    #     ha = False, bc = bc, anisotropic = True)
+        
+    # mod = sp.model(grid = sp.grid(x=data['x'], y=data['y'], t = data['t'],extend = 5, Nbs = Nbs),
+    #     spde = 'var-advection-var-diffusion', ha = False, bc = bc, anisotropic = True, mod0 = mod0)
+    # # x0 = np.hstack([[-1]*Nbs2,[-1]*Nbs2,[1]*Nbs2,[-1]*Nbs2,[1]*Nbs2,[1]*Nbs2,0.1,x00[:-1],np.log(100)])
+    # # x0 = np.hstack([p0[:-5],x00[:-1],np.log(100)])
+
+    # mod.fit(data = data['mut'],verbose = True,lr = lr,
+    #         end = "./fits/var_advection_var_diffusion_ani_bs5_bc%d"%bc, x0 = p0, fix = [-1])
+
+    # x0 = mod.getPars(onlySelf=False)
+
+    # mod.fit(data = data['mut'],verbose = True,lr = lr2,
+    #         end = "./fits/var_advection_var_diffusion_ani_bs5_bc%d"%bc, x0 = x0)
+
+    ### ANI b10 1.6203
+    p0 = np.load('./fits/var_advection_var_diffusion_ani_b10_bc%d.npy'%bc)
+    # x00 = np.hstack([[-1]*Nbs2,[-1]*Nbs2,[1]*Nbs2,[-1]*Nbs2,np.log(100)])
     # x00 = np.hstack([[p0[-5]]*9,[p0[-4]]*9,[p0[-3]]*9,[p0[-2]]*9,np.log(100)])
-    mod0 = sp.model(grid = sp.grid(x=data['x'], y=data['y'], extend = 5),
+    mod0 = sp.model(grid = sp.grid(x=data['x'], y=data['y'], extend = 10),
         spde = 'var-whittle-matern',#  parameters = x00,
         ha = False, bc = bc, anisotropic = True)
         
-    mod = sp.model(grid = sp.grid(x=data['x'], y=data['y'], t = data['t'],extend = 5),
+    mod = sp.model(grid = sp.grid(x=data['x'], y=data['y'], t = data['t'],extend = 10),
         spde = 'var-advection-var-diffusion', ha = False, bc = bc, anisotropic = True, mod0 = mod0)
-    # x0 = np.hstack([[-1]*9,[-1]*9,[1]*9,[-1]*9,[1]*9,[1]*9,0.1,x00[:-1],np.log(100)])
+    # x0 = np.hstack([[-1]*Nbs2,[-1]*Nbs2,[1]*Nbs2,[-1]*Nbs2,[1]*Nbs2,[1]*Nbs2,0.1,x00[:-1],np.log(100)])
     # x0 = np.hstack([p0[:-5],x00[:-1],np.log(100)])
-    mod.fit(data = data['mut'],verbose = True,lr = lr3,
-            end = "./fits/var_advection_var_diffusion_ani_bc%d"%bc, x0 = p0, fix = [-1])
+
+    mod.fit(data = data['mut'],verbose = True,lr = lr,
+            end = "./fits/var_advection_var_diffusion_ani_b10_bc%d"%bc, x0 = p0, fix = [-1])
 
     x0 = mod.getPars(onlySelf=False)
 
-    mod.fit(data = data['mut'],verbose = True,lr = lr3,
-            end = "./fits/var_advection_var_diffusion_ani_bc%d"%bc, x0 = x0)
-    
-    
+    mod.fit(data = data['mut'],verbose = True,lr = lr2,
+            end = "./fits/var_advection_var_diffusion_ani_b10_bc%d"%bc, x0 = x0)
     ### ISO
 #     mod0 = sp.model(grid = sp.grid(x=data['x'], y=data['y'], extend = 5),
 #          spde = 'whittle-matern', parameters = np.load('../fits/whittle_matern_bc%d.npy'%bc),

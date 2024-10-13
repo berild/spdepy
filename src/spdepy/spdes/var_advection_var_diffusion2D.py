@@ -15,11 +15,12 @@ class VarAdvectionVarDiffusion2D:
         self.S = None
         self.bc = bc
         self.mod0 = mod0
+        self.Np = grid.Nbs2
         self.AHnew = None
         self.Awnew = None
         self.fitQ0 = True
         if par is None:
-            par = np.hstack([[-1]*9,[-1]*9,[0.1]*18,[0.1]*18,0,np.log(100)],dtype="float64")
+            par = np.hstack([[-1]*self.Np,[-1]*self.Np,[0.1]*self.Np*2,[0.1]*self.Np*2,0,np.log(100)],dtype="float64")
             self.setPars(par)
         else:
             self.setQ(par = par)
@@ -32,15 +33,15 @@ class VarAdvectionVarDiffusion2D:
     
     def setPars(self,par)-> None:
         par = np.array(par,dtype = "float64")
-        self.kappa = par[0:9]
-        self.gamma = par[9:18]
-        self.vx = par[18:27]
-        self.vy = par[27:36]
-        self.wx = par[36:45]
-        self.wy = par[45:54]
-        self.sigma = par[54]
-        if par.size > 56:
-            self.mod0.setPars(par[55:])
+        self.kappa = par[0:self.Np]
+        self.gamma = par[self.Np:self.Np*2]
+        self.vx = par[self.Np*2:self.Np*3]
+        self.vy = par[self.Np*3:self.Np*4]
+        self.wx = par[self.Np*4:self.Np*5]
+        self.wy = par[self.Np*5:self.Np*6]
+        self.sigma = par[self.Np*6]
+        if par.size > self.Np*6 + 2: 
+            self.mod0.setPars(par[(self.Np*6+1):])
         self.tau = par[-1]
         
     def initFit(self,data, **kwargs):
@@ -50,9 +51,9 @@ class VarAdvectionVarDiffusion2D:
             self.fitQ0 = kwargs.get("fitQ0")
         if self.fitQ0:
             x0 = self.mod0.getPars()[:-1]
-            par = np.hstack([[-1]*9,[-1]*9,[0.1]*18,[0.1]*18,0,x0,np.log(100)],dtype="float64")
+            par = np.hstack([[-1]*self.Np,[-1]*self.Np,[0.1]*self.Np*2,[0.1]*self.Np*2,0,x0,np.log(100)],dtype="float64")
         else:
-            par = np.hstack([[-1]*9,[-1]*9,[0.1]*18,[0.1]*18,0,np.log(100)],dtype="float64")
+            par = np.hstack([[-1]*self.Np,[-1]*self.Np,[0.1]*self.Np*2,[0.1]*self.Np*2,0,np.log(100)],dtype="float64")
         self.data = data
         if self.data.ndim == 2:
             self.r = self.data.shape[1]
@@ -72,12 +73,12 @@ class VarAdvectionVarDiffusion2D:
         self.S = self.grid.getS()
     
     def print(self,par):
-        if par.size > 56:
-            s1 = "| \u03BA = %2.2f"%(np.exp(par[0:9]).mean()) +  ", \u03B3 = %2.2f"%(np.exp(par[9:18]).mean()) + ", vx = %2.2f"%(par[18:27].mean()) + ", vy = %2.2f"%(par[27:36].mean()) + ", wx = %2.2f"%(par[36:45].mean()) + ", wy = %2.2f"%(par[45:54].mean()) + ", \u03C3 = %2.2f"%(np.exp(par[54])) +  ", \u03C4 = %2.2f\n"%(np.exp(par[-1])) 
-            s1 += " Q0: " + self.mod0.print(par[55:])[:-10]
+        if par.size > self.Np*6 + 2:
+            s1 = "| \u03BA = %2.2f"%(np.exp(par[:self.Np]).mean()) +  ", \u03B3 = %2.2f"%(np.exp(par[self.Np:self.Np*2]).mean()) + ", vx = %2.2f"%(par[self.Np*2:self.Np*3].mean()) + ", vy = %2.2f"%(par[self.Np*3:self.Np*4].mean()) + ", wx = %2.2f"%(par[self.Np*4:self.Np*5].mean()) + ", wy = %2.2f"%(par[self.Np*5:self.Np*6].mean()) + ", \u03C3 = %2.2f"%(np.exp(par[self.Np*6])) +  ", \u03C4 = %2.2f\n"%(np.exp(par[-1])) 
+            s1 += " Q0: " + self.mod0.print(par[(self.Np*6+1):])[:-10]
             return s1
         else:
-            return("| \u03BA = %2.2f"%(np.exp(par[0:9]).mean()) +  ", \u03B3 = %2.2f"%(np.exp(par[9:18]).mean()) + ", vx = %2.2f"%(par[18:27].mean()) + ", vy = %2.2f"%(par[27:36].mean()) + ", wx = %2.2f"%(par[36:45].mean()) + ", wy = %2.2f"%(par[45:54].mean()) + ", \u03C3 = %2.2f"%(np.exp(par[54])) +  ", \u03C4 = %2.2f"%(np.exp(par[55])))
+            return("| \u03BA = %2.2f"%(np.exp(par[:self.Np]).mean()) +  ", \u03B3 = %2.2f"%(np.exp(par[self.Np:self.Np*2]).mean()) + ", vx = %2.2f"%(par[self.Np*2:self.Np*3].mean()) + ", vy = %2.2f"%(par[self.Np*3:self.Np*4].mean()) + ", wx = %2.2f"%(par[self.Np*4:self.Np*5].mean()) + ", wy = %2.2f"%(par[self.Np*5:self.Np*6].mean()) + ", \u03C3 = %2.2f"%(np.exp(par[self.Np*6])) +  ", \u03C4 = %2.2f"%(np.exp(par[-1])))
 
     def makeQ(self, par, grad = True):
         # grid
@@ -87,21 +88,21 @@ class VarAdvectionVarDiffusion2D:
         Dv = self.grid.Dv
         iDv = self.grid.iDv
         # parameters
-        kappa = np.exp(self.grid.evalB(par[0:9]))
-        gamma = np.exp(self.grid.evalBH(par[9:18]))
-        vx = self.grid.evalBH(par[18:27])
-        vy = self.grid.evalBH(par[27:36])
+        kappa = np.exp(self.grid.evalB(par[:self.Np]))
+        gamma = np.exp(self.grid.evalBH(par[self.Np:self.Np*2]))
+        vx = self.grid.evalBH(par[self.Np*2:self.Np*3])
+        vy = self.grid.evalBH(par[self.Np*3:self.Np*4])
         vv = np.stack([vx,vy],axis = 2)
-        ws = self.grid.evalAdv(par[36:54])
-        sigma = np.exp(par[54])
+        ws = self.grid.evalAdv(par[self.Np*4:self.Np*6])
+        sigma = np.exp(par[self.Np*6])
         # components
         Hs = (np.eye(2)*(np.stack([gamma,gamma],axis=2))[:,:,:,np.newaxis]) + vv[:,:,:,np.newaxis]*vv[:,:,np.newaxis,:]
         Dk = sparse.diags(kappa).tocsc()
         As = Dv@Dk
         Qs = As.transpose()@iDv@As
         A = Dv + (Dv@Dk - self.Ah(Hs) +  self.Aw(ws))*dt
-        if par.size > 56:
-            Q0, _, dQ0 = self.mod0.makeQ(par[55:],grad = grad)
+        if par.size > self.Np*6 + 2:
+            Q0, _, dQ0 = self.mod0.makeQ(par[(self.Np*6+1):],grad = grad)
         else:
             if self.mod0.Q is None:
                 self.mod0.setQ()
@@ -117,7 +118,7 @@ class VarAdvectionVarDiffusion2D:
         if grad:
             dQ = []
             # log kappa 2
-            for i in range(9):
+            for i in range(self.Np):
                 dA = dt*Dv@(sparse.diags(self.grid.bs[:,i]*kappa).tocsc())
                 dAs = Dv@(sparse.diags(self.grid.bs[:,i]*kappa).tocsc())
                 dQs = dAs.T@iDv@As + As.T@iDv@dAs
@@ -127,7 +128,7 @@ class VarAdvectionVarDiffusion2D:
                 tdQ = sparse.bmat([[tdQ],[sparse.bmat([[sparse.csc_matrix((Ns,(T-2)*Ns)),- dA.T@iDv@Qs - A.T@iDv@dQs, dA.T@iDv@Qs@iDv@A + A.T@iDv@dQs@iDv@A + A.T@iDv@Qs@iDv@dA]])]])
                 dQ.append((tdQ/(dt*sigma)).tocsc())
             # log gamma
-            for i in range(9):
+            for i in range(self.Np):
                 dHs = np.eye(2)*(np.stack([self.grid.bsH[:,:,i]*gamma,self.grid.bsH[:,:,i]*gamma],axis=2)[:,:,:,np.newaxis])
                 dA = -  self.Ah(dHs)*dt
                 tdQ = sparse.bmat([[sparse.csc_matrix((Ns,Ns)), - Qs@iDv@dA,sparse.csc_matrix((Ns,(T-2)*Ns))]])
@@ -136,10 +137,10 @@ class VarAdvectionVarDiffusion2D:
                 tdQ = sparse.bmat([[tdQ],[sparse.bmat([[sparse.csc_matrix((Ns,(T-2)*Ns)),- dA.T@iDv@Qs , dA.T@iDv@Qs@iDv@A + A.T@iDv@Qs@iDv@dA]])]])
                 dQ.append((tdQ/(dt*sigma)).tocsc())
             # vx
-            for i in range(9):
-                dpar = np.zeros(9)
+            for i in range(self.Np):
+                dpar = np.zeros(self.Np)
                 dpar[i] = 1
-                dv = np.stack([self.grid.evalBH(par = dpar),self.grid.evalBH(par = np.zeros(9))],axis = 2)
+                dv = np.stack([self.grid.evalBH(par = dpar),self.grid.evalBH(par = np.zeros(self.Np))],axis = 2)
                 dHs = vv[:,:,:,np.newaxis]*dv[:,:,np.newaxis,:]  + dv[:,:,:,np.newaxis]*vv[:,:,np.newaxis,:]
                 dA = -  self.Ah(dHs)*dt
                 tdQ = sparse.bmat([[sparse.csc_matrix((Ns,Ns)), - Qs@iDv@dA,sparse.csc_matrix((Ns,(T-2)*Ns))]])
@@ -148,10 +149,10 @@ class VarAdvectionVarDiffusion2D:
                 tdQ = sparse.bmat([[tdQ],[sparse.bmat([[sparse.csc_matrix((Ns,(T-2)*Ns)),- dA.T@iDv@Qs , dA.T@iDv@Qs@iDv@A + A.T@iDv@Qs@iDv@dA]])]])
                 dQ.append((tdQ/(dt*sigma)).tocsc())
             # vy
-            for i in range(9):
-                dpar = np.zeros(9)
+            for i in range(self.Np):
+                dpar = np.zeros(self.Np)
                 dpar[i] = 1
-                dv = np.stack([self.grid.evalBH(par = np.zeros(9)),self.grid.evalBH(par = dpar)],axis = 2)
+                dv = np.stack([self.grid.evalBH(par = np.zeros(self.Np)),self.grid.evalBH(par = dpar)],axis = 2)
                 dHs = vv[:,:,:,np.newaxis]*dv[:,:,np.newaxis,:]  + dv[:,:,:,np.newaxis]*vv[:,:,np.newaxis,:]
                 dA = -  self.Ah(dHs)*dt
                 tdQ = sparse.bmat([[sparse.csc_matrix((Ns,Ns)), - Qs@iDv@dA,sparse.csc_matrix((Ns,(T-2)*Ns))]])
@@ -160,8 +161,8 @@ class VarAdvectionVarDiffusion2D:
                 tdQ = sparse.bmat([[tdQ],[sparse.bmat([[sparse.csc_matrix((Ns,(T-2)*Ns)),- dA.T@iDv@Qs , dA.T@iDv@Qs@iDv@A + A.T@iDv@Qs@iDv@dA]])]])
                 dQ.append((tdQ/(dt*sigma)).tocsc())
             # wx and wy
-            for i in range(9):
-                dpar = np.zeros(18)
+            for i in range(self.Np):
+                dpar = np.zeros(self.Np*2)
                 dpar[i] = 1
                 dws = self.grid.evalAdv(dpar)
                 dA = self.Aw( ws, dws, diff = 1)*dt
@@ -170,8 +171,8 @@ class VarAdvectionVarDiffusion2D:
                     tdQ = sparse.bmat([[tdQ],[sparse.bmat([[sparse.csc_matrix((Ns,(t)*Ns)), -dA.T@iDv@Qs, dA.T@iDv@Qs@iDv@A + A.T@iDv@Qs@iDv@dA, - Qs@iDv@dA,sparse.csc_matrix((Ns,(T-3-t)*Ns))]])]])
                 tdQ = sparse.bmat([[tdQ],[sparse.bmat([[sparse.csc_matrix((Ns,(T-2)*Ns)),- dA.T@iDv@Qs, dA.T@iDv@Qs@iDv@A + A.T@iDv@Qs@iDv@dA]])]])
                 dQ.append((tdQ/(dt*sigma)).tocsc())
-            for i in range(9,18):
-                dpar = np.zeros(18)
+            for i in range(self.Np,self.Np*2):
+                dpar = np.zeros(self.Np*2)
                 dpar[i] = 1
                 dws = self.grid.evalAdv(dpar)
                 dA = self.Aw(ws, dws, diff = 2)*dt
@@ -187,7 +188,7 @@ class VarAdvectionVarDiffusion2D:
             tdQ = sparse.bmat([[tdQ],[sparse.bmat([[sparse.csc_matrix((Ns,(T-2)*Ns)),-A.T@iDv@Qs, A.T@iDv@Qs@iDv@A]])]])
             dQ.append(-tdQ.tocsc()/(dt*sigma))
             # Q0
-            if par.size > 56:
+            if par.size > self.Np*6 + 2:
                 for j in range(len(dQ0)): 
                     tdQ = sparse.bmat([[dQ0[j], sparse.csc_matrix((Ns,(T-1)*Ns))]])
                     for t in range(T-1):

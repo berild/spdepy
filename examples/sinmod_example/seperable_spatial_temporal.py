@@ -19,12 +19,12 @@ def fit(bc):
     ### ANI
     mod = sp.model(grid = sp.grid(x=data['x'], y=data['y'], t = data['t'],extend = 5),
          spde = 'seperable-spatial-temporal', ha = False, bc = bc, anisotropic = True)
-    # x0 = np.hstack([[-1]*9,[-1]*9,[1]*9,[1]*9,0.1,0,np.log(100)])
-    x0 = np.load('./fits/seperable_spatial_temporal_ani_bc%d_usable.npy'%bc)
-    mod.fit(data = data['mut'],verbose = True,lr = lr3, 
+    x0 = np.hstack([[-1]*9,[-1]*9,[1]*9,[1]*9,-1,np.log(100)])
+    # x0 = np.load('./fits/seperable_spatial_temporal_ani_bc%d_usable.npy'%bc)
+    mod.fit(data = data['mut'],verbose = True,lr = lr, 
             end = "./fits/seperable_spatial_temporal_ani_bc%d"%bc, x0 = x0, fix = [-1])
     x0 = mod.getPars()
-    mod.fit(data = data['mut'],verbose = True,lr = lr3, 
+    mod.fit(data = data['mut'],verbose = True,lr = lr2, 
             end = "./fits/seperable_spatial_temporal_ani_bc%d"%bc, x0 = x0)
     
     ### ISO
